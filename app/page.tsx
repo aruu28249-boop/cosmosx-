@@ -1,6 +1,7 @@
 import SolarSystem from "@/components/SolarSystem";
 import ScenarioSimulator from "@/components/ScenarioSimulator";
 import SpaceTimeline from "@/components/SpaceTimeline";
+import Hero from "@/components/Hero";
 
 export default function Home() {
   return (
@@ -17,12 +18,7 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="h-screen flex flex-col items-center justify-center text-center px-6">
-        <h1 className="text-5xl font-bold mb-4 leading-tight">CosmosX</h1>
-        <p className="text-xl text-white/60 max-w-xl">
-          Explore the Past. Visualize the Present. Simulate the Future.
-        </p>
-      </section>
+      <Hero />
 
       {/* Solar System */}
       <section id="solar-system" className="min-h-screen">
