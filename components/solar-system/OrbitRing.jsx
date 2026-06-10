@@ -2,27 +2,28 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 
 export default function OrbitRing({ radius }) {
-  const points = useMemo(() => {
+  const geometry = useMemo(() => {
+    const segments = 180
     const pts = []
-    for (let i = 0; i <= 64; i++) {
-      const angle = (i / 64) * Math.PI * 2
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2
       pts.push(new THREE.Vector3(
         Math.cos(angle) * radius,
         0,
         Math.sin(angle) * radius
       ))
     }
-    return pts
+    return new THREE.BufferGeometry().setFromPoints(pts)
   }, [radius])
-
-  const geometry = useMemo(() =>
-    new THREE.BufferGeometry().setFromPoints(points),
-    [points]
-  )
 
   return (
     <line geometry={geometry}>
-      <lineBasicMaterial color="#ffffff" opacity={0.15} transparent />
+      {/* depthWrite:true + no additive blending = ring hides behind the sun correctly */}
+      <lineBasicMaterial
+        color="#8aa8d0"
+        opacity={0.22}
+        transparent
+      />
     </line>
   )
 }
