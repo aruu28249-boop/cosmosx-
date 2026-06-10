@@ -70,8 +70,10 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
 
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <Stars radius={200} depth={50} count={6000} factor={4} saturation={0.3} fade />
+      {/* Low ambient — space is dark but not completely black */}
+      <ambientLight intensity={0.15} color="#1a2040" />
+      {/* Dense starfield with more saturation for Milky Way feel */}
+      <Stars radius={300} depth={80} count={12000} factor={5} saturation={0.8} fade speed={0.4} />
       <OrbitControls
         ref={orbitRef}
         enableZoom={true}
