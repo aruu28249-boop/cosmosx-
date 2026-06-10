@@ -1,6 +1,5 @@
-import SolarSystem from '@/components/SolarSystem'
-import ScenarioSimulator from '@/components/ScenarioSimulator'
 import Link from 'next/link'
+import SimulatorClient from '@/components/SimulatorClient'
 
 export const metadata = {
   title: 'CosmosX | Simulator',
@@ -27,7 +26,6 @@ export default function SimulatePage() {
         background: 'linear-gradient(to bottom, rgba(5,8,22,0.85) 0%, transparent 100%)',
         pointerEvents: 'none',
       }}>
-        {/* Back link */}
         <Link
           href="/"
           style={{
@@ -48,7 +46,6 @@ export default function SimulatePage() {
           ← HOME
         </Link>
 
-        {/* Title */}
         <div style={{
           fontFamily: 'var(--font-syne), serif',
           fontSize: '18px',
@@ -59,17 +56,11 @@ export default function SimulatePage() {
           COSMOSX · SIMULATOR
         </div>
 
-        {/* Spacer to balance the flex row */}
         <div style={{ width: '100px' }} />
       </div>
 
-      {/* ── Full-screen 3D canvas ───────────────────────────────── */}
-      <div style={{ position: 'absolute', inset: 0 }}>
-        <SolarSystem />
-      </div>
-
-      {/* ── Scenario controls overlay ───────────────────────────── */}
-      <ScenarioSimulator />
+      {/* ── 3D canvas + scenario panel (client-side, with loading fallback) ── */}
+      <SimulatorClient />
     </div>
   )
 }

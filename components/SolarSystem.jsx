@@ -9,6 +9,7 @@ import Planet from './solar-system/Planet'
 import InfoPanel from './solar-system/InfoPanel'
 import TimeControls from './solar-system/TimeControls'
 import Asteroid from './solar-system/Asteroid'
+import ShootingStars from './solar-system/ShootingStars'
 import * as THREE from 'three'
 
 // ─── Module-level event bus ──────────────────────────────────────────────────
@@ -42,8 +43,18 @@ function MarsFlash({ flash }) {
 
 function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMarsFlash }) {
   const marsPositionRef = useRef({ x: 42, y: 0, z: 0 })
-  const orbitRef        = useRef()
-  const { camera }      = useThree()
+  // Snapshot Mars position into state when asteroid effect fires,
+  // so we never access marsPositionRef.current during render.
+  const [marsTarget, setMarsTarget] = useState({ x: 42, y: 0, z: 0 })
+  const orbitRef = useRef()
+  const { camera } = useThree()
+
+  // Capture Mars position at the moment the asteroid effect is triggered
+  useEffect(() => {
+    if (activeEffect === 'asteroid-hit-mars') {
+      setMarsTarget({ ...marsPositionRef.current })
+    }
+  }, [activeEffect])
 
   // Register camera reset into the module-level slot
   useEffect(() => {
@@ -70,8 +81,12 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
 
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <Stars radius={200} depth={50} count={6000} factor={4} saturation={0.3} fade />
+      {/* Low ambient — space is dark but not completely black */}
+      <ambientLight intensity={0.15} color="#1a2040" />
+      {/* Dense starfield with more saturation for Milky Way feel */}
+      <Stars radius={300} depth={80} count={12000} factor={5} saturation={0.8} fade speed={0.4} />
+      {/* Shooting stars streaking across the background */}
+      <ShootingStars />
       <OrbitControls
         ref={orbitRef}
         enableZoom={true}
@@ -99,7 +114,7 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
       ))}
       {activeEffect === 'asteroid-hit-mars' && (
         <Asteroid
-          targetPosition={marsPositionRef.current}
+          targetPosition={marsTarget}
           onImpact={handleAsteroidImpact}
         />
       )}

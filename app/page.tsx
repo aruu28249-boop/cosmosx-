@@ -38,6 +38,7 @@ export default function Home() {
           <div className="mt-16 pointer-events-auto">
             <Link
               href="/simulate"
+              prefetch={true}
               className="inline-flex items-center gap-3 px-10 py-4 rounded-full
                 bg-gradient-to-r from-indigo-500/30 to-violet-500/30
                 border border-indigo-400/40 hover:border-indigo-300/70
