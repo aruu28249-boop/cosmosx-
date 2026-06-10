@@ -83,44 +83,50 @@ const PLANET_VISUALS = {
         vec3 deepOcean   = vec3(0.03, 0.14, 0.50);
         vec3 shallowSea  = vec3(0.08, 0.35, 0.65);
         vec3 coast       = vec3(0.14, 0.50, 0.60);
-        vec3 lowland     = vec3(0.22, 0.42, 0.18);
-        vec3 midland     = vec3(0.32, 0.52, 0.22);
-        vec3 highland    = vec3(0.48, 0.42, 0.28);
-        vec3 mountain    = vec3(0.60, 0.56, 0.50);
+        vec3 lowland     = vec3(0.22, 0.42, 0.18);   // dark green jungle
+        vec3 midland     = vec3(0.32, 0.52, 0.22);   // mid green
+        vec3 highland    = vec3(0.48, 0.42, 0.28);   // brown-tan
+        vec3 mountain    = vec3(0.60, 0.56, 0.50);   // grey rock
         vec3 snow        = vec3(0.90, 0.93, 0.97);
-        vec3 desert      = vec3(0.72, 0.62, 0.38);
+        vec3 desert      = vec3(0.72, 0.62, 0.38);   // Sahara tan
 
-        // ~40% ocean, ~60% land — more green/brown balance
+        // ~40% ocean, ~60% land — corrected visual balance
         vec3 surface;
-        if (land < 0.43) {
+        if (land < 0.44) {
+          // Ocean — deep to shallow
           surface = mix(deepOcean, shallowSea, smoothstep(0.28, 0.40, land));
-          surface = mix(surface,   coast,      smoothstep(0.40, 0.43, land));
-        } else if (land < 0.52) {
-          float t    = smoothstep(0.43, 0.52, land);
-          float trop = smoothstep(0.25, 0.50, lat);
-          vec3 veg   = mix(lowland, midland, trop * 0.35);
+          surface = mix(surface, coast, smoothstep(0.40, 0.44, land));
+        } else if (land < 0.54) {
+          // Green lowland / jungle
+          float t    = smoothstep(0.44, 0.54, land);
+          float trop = smoothstep(0.30, 0.55, lat);
+          vec3 veg   = mix(lowland, midland, trop * 0.5);
           surface    = mix(coast, veg, t);
-        } else if (land < 0.62) {
-          float t    = smoothstep(0.52, 0.62, land);
-          float trop = smoothstep(0.20, 0.55, lat);
-          surface    = mix(midland, mix(midland, desert, trop * 0.65), t);
-        } else if (land < 0.72) {
-          surface = mix(highland, mountain, smoothstep(0.62, 0.72, land));
+        } else if (land < 0.64) {
+          // Mid green to tan (climate depends on latitude)
+          float trop = smoothstep(0.22, 0.52, lat);
+          surface    = mix(midland, mix(midland, desert, trop * 0.7), smoothstep(0.54, 0.64, land));
+        } else if (land < 0.74) {
+          surface = mix(highland, mountain, smoothstep(0.64, 0.74, land));
         } else {
-          surface = mix(mountain, snow, smoothstep(0.72, 0.88, land));
+          surface = mix(mountain, snow, smoothstep(0.74, 0.88, land));
         }
 
+        // ── Polar caps override ──────────────────────────────────────────
         surface = mix(surface, snow, polar);
 
+        // ── Cloud layer (thin wispy white) ───────────────────────────────
         vec3 cloudCol = mix(vec3(0.88,0.90,0.95), snow, 0.5);
-        surface = mix(surface, cloudCol, cloudMask * 0.75);
+        surface = mix(surface, cloudCol, cloudMask * 0.80);
 
-        float isOcean = 1.0 - smoothstep(0.40, 0.46, land);
-        float spec    = pow(max(0.0, dot(normalize(vNormal), vec3(0.3, 0.5, 0.8))), 28.0);
-        surface      += isOcean * spec * 0.40 * (1.0 - cloudMask);
+        // ── Ocean specular glint (bright where normal faces viewer) ──────
+        float isOcean   = 1.0 - smoothstep(0.40, 0.46, land);
+        float spec      = pow(max(0.0, dot(normalize(vNormal), vec3(0.3, 0.5, 0.8))), 28.0);
+        surface        += isOcean * spec * 0.45 * (1.0 - cloudMask);
 
+        // ── Atmospheric limb scattering (blue haze at edges) ─────────────
         float rim = 1.0 - max(0.0, dot(vNormal, vec3(0., 0., 1.)));
-        surface   = mix(surface, vec3(0.30, 0.58, 1.0), pow(rim, 5.0) * 0.30);
+        surface   = mix(surface, vec3(0.30, 0.58, 1.0), pow(rim, 4.0) * 0.60);
 
         gl_FragColor = vec4(surface, 1.0);
       }

@@ -105,8 +105,8 @@ export default function Sun() {
         <primitive object={sunMat} attach="material" />
       </mesh>
 
-      {/* Camera-facing sprite glows — no geometry edges, no dark rings */}
-      <sprite ref={s1Ref} scale={[19, 19, 1]}>
+      {/* Camera-facing sprite glows only — no sphere geometry = no ring edges */}
+      <sprite ref={s1Ref} scale={[14, 14, 1]}>
         <primitive object={m1} attach="material" />
       </sprite>
       <sprite ref={s2Ref} scale={[36, 36, 1]}>
