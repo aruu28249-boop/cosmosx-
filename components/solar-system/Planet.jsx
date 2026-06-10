@@ -24,8 +24,8 @@ const PLANET_VISUALS = {
   Earth: {
     shader: true,
     atmosphereColor: new THREE.Color(0.28, 0.55, 1.0),
-    atmosphereOpacity: 0.30,
-    atmosphereScale: 1.14,
+    atmosphereOpacity: 0.12,
+    atmosphereScale: 1.08,
     vert: /* glsl */`
       varying vec2 vUv;
       varying vec3 vNormal;
@@ -80,36 +80,36 @@ const PLANET_VISUALS = {
         float polar = smoothstep(0.78, 0.94, lat);
 
         // ── Surface colours ──────────────────────────────────────────────
-        vec3 deepOcean   = vec3(0.03, 0.14, 0.50);
-        vec3 shallowSea  = vec3(0.08, 0.35, 0.65);
-        vec3 coast       = vec3(0.14, 0.50, 0.60);
-        vec3 lowland     = vec3(0.22, 0.42, 0.18);   // dark green jungle
-        vec3 midland     = vec3(0.32, 0.52, 0.22);   // mid green
-        vec3 highland    = vec3(0.48, 0.42, 0.28);   // brown-tan
-        vec3 mountain    = vec3(0.60, 0.56, 0.50);   // grey rock
-        vec3 snow        = vec3(0.90, 0.93, 0.97);
-        vec3 desert      = vec3(0.72, 0.62, 0.38);   // Sahara tan
+        vec3 deepOcean   = vec3(0.02, 0.10, 0.45);
+        vec3 shallowSea  = vec3(0.05, 0.28, 0.62);
+        vec3 coast       = vec3(0.10, 0.44, 0.58);
+        vec3 lowland     = vec3(0.20, 0.40, 0.16);   // dark green jungle
+        vec3 midland     = vec3(0.30, 0.50, 0.20);   // mid green
+        vec3 highland    = vec3(0.46, 0.40, 0.26);   // brown-tan
+        vec3 mountain    = vec3(0.58, 0.54, 0.48);   // grey rock
+        vec3 snow        = vec3(0.92, 0.95, 0.99);
+        vec3 desert      = vec3(0.70, 0.60, 0.36);   // Sahara tan
 
-        // ~40% ocean, ~60% land — corrected visual balance
+        // ~65% ocean, ~35% land — realistic Earth water coverage
         vec3 surface;
-        if (land < 0.44) {
-          // Ocean — deep to shallow
-          surface = mix(deepOcean, shallowSea, smoothstep(0.28, 0.40, land));
-          surface = mix(surface, coast, smoothstep(0.40, 0.44, land));
-        } else if (land < 0.54) {
+        if (land < 0.36) {
+          // Deep ocean
+          surface = mix(deepOcean, shallowSea, smoothstep(0.20, 0.32, land));
+          surface = mix(surface, coast, smoothstep(0.32, 0.36, land));
+        } else if (land < 0.48) {
           // Green lowland / jungle
-          float t    = smoothstep(0.44, 0.54, land);
+          float t    = smoothstep(0.36, 0.48, land);
           float trop = smoothstep(0.30, 0.55, lat);
           vec3 veg   = mix(lowland, midland, trop * 0.5);
           surface    = mix(coast, veg, t);
-        } else if (land < 0.64) {
-          // Mid green to tan (climate depends on latitude)
+        } else if (land < 0.60) {
+          // Mid green to tan
           float trop = smoothstep(0.22, 0.52, lat);
-          surface    = mix(midland, mix(midland, desert, trop * 0.7), smoothstep(0.54, 0.64, land));
-        } else if (land < 0.74) {
-          surface = mix(highland, mountain, smoothstep(0.64, 0.74, land));
+          surface    = mix(midland, mix(midland, desert, trop * 0.7), smoothstep(0.48, 0.60, land));
+        } else if (land < 0.70) {
+          surface = mix(highland, mountain, smoothstep(0.60, 0.70, land));
         } else {
-          surface = mix(mountain, snow, smoothstep(0.74, 0.88, land));
+          surface = mix(mountain, snow, smoothstep(0.70, 0.85, land));
         }
 
         // ── Polar caps override ──────────────────────────────────────────
@@ -120,13 +120,13 @@ const PLANET_VISUALS = {
         surface = mix(surface, cloudCol, cloudMask * 0.80);
 
         // ── Ocean specular glint (bright where normal faces viewer) ──────
-        float isOcean   = 1.0 - smoothstep(0.40, 0.46, land);
+        float isOcean   = 1.0 - smoothstep(0.32, 0.40, land);
         float spec      = pow(max(0.0, dot(normalize(vNormal), vec3(0.3, 0.5, 0.8))), 28.0);
-        surface        += isOcean * spec * 0.45 * (1.0 - cloudMask);
+        surface        += isOcean * spec * 0.55 * (1.0 - cloudMask);
 
-        // ── Atmospheric limb scattering (blue haze at edges) ─────────────
+        // ── Atmospheric limb scattering (very subtle blue haze only at grazing edge) ──
         float rim = 1.0 - max(0.0, dot(vNormal, vec3(0., 0., 1.)));
-        surface   = mix(surface, vec3(0.30, 0.58, 1.0), pow(rim, 4.0) * 0.60);
+        surface   = mix(surface, vec3(0.30, 0.58, 1.0), pow(rim, 6.0) * 0.25);
 
         gl_FragColor = vec4(surface, 1.0);
       }
@@ -173,8 +173,8 @@ const PLANET_VISUALS = {
   Jupiter: {
     shader: true,
     atmosphereColor: new THREE.Color(0.82, 0.60, 0.35),
-    atmosphereOpacity: 0.13,
-    atmosphereScale: 1.05,
+    atmosphereOpacity: 0.06,
+    atmosphereScale: 1.03,
     vert: /* glsl */`
       varying vec2 vUv; varying vec3 vNormal;
       void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
@@ -215,6 +215,7 @@ const PLANET_VISUALS = {
 export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate }) {
   const meshRef       = useRef()
   const atmoRef       = useRef()
+  const jupiterRingRef = useRef()
   const moonRef       = useRef()
   const moon2Ref      = useRef()
   const moonGlow1Ref  = useRef()
@@ -271,6 +272,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     meshRef.current.rotation.y += data.rotationSpeed * delta * timeMultiplier
 
     if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
+    if (jupiterRingRef.current) jupiterRingRef.current.position.set(x, 0, z)
     if (shaderMat?.uniforms) shaderMat.uniforms.time.value = clock.elapsedTime
     if (onPositionUpdate) onPositionUpdate({ x, y: 0, z })
 
@@ -335,11 +337,11 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
         </mesh>
       )}
 
-      {/* Jupiter faint ring */}
+      {/* Jupiter faint ring — follows planet via jupiterRingRef */}
       {data.name === 'Jupiter' && (
-        <mesh rotation={[Math.PI / 2.2, 0, 0]}>
-          <ringGeometry args={[data.size * 1.5, data.size * 2.4, 80]} />
-          <meshBasicMaterial color="#c8a06e" transparent opacity={0.10}
+        <mesh ref={jupiterRingRef} rotation={[Math.PI / 2.2, 0, 0]}>
+          <ringGeometry args={[data.size * 1.6, data.size * 2.5, 80]} />
+          <meshBasicMaterial color="#b8905a" transparent opacity={0.07}
             side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
       )}
