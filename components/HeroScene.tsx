@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, Stars } from "@react-three/drei";
 import * as THREE from "three";
 
 function Sun() {
   const sunRef = useRef<THREE.Group>(null);
-  
+
   const texture = useMemo(() => {
     if (typeof document === 'undefined') return null;
     const canvas = document.createElement('canvas');
@@ -62,26 +62,98 @@ function Planet({ distance, size, color, speed, offset = 0, hasRings = false }: 
   });
 
   return (
-    <group ref={groupRef} rotation={[0, offset, 0]}>
-      <group position={[distance, 0, 0]}>
-        <mesh ref={planetRef}>
-          <sphereGeometry args={[size, 64, 64]} />
-          <meshStandardMaterial color={color} roughness={0.7} metalness={0.2} />
-        </mesh>
-        {hasRings && (
-          <mesh rotation={[Math.PI / 2.2, 0, 0]}>
-            <ringGeometry args={[size * 1.4, size * 2.2, 64]} />
-            <meshStandardMaterial color="#aa9988" transparent opacity={0.6} side={THREE.DoubleSide} />
+    <>
+      {/* Orbital Line */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[distance - 0.05, distance + 0.05, 128]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.15} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+
+      <group ref={groupRef} rotation={[0, offset, 0]}>
+        <group position={[distance, 0, 0]}>
+          <mesh ref={planetRef}>
+            <sphereGeometry args={[size, 64, 64]} />
+            <meshStandardMaterial color={color} roughness={0.7} metalness={0.2} />
           </mesh>
-        )}
+          {hasRings && (
+            <mesh rotation={[Math.PI / 2.2, 0, 0]}>
+              <ringGeometry args={[size * 1.4, size * 2.2, 64]} />
+              <meshStandardMaterial color="#aa9988" transparent opacity={0.6} side={THREE.DoubleSide} />
+            </mesh>
+          )}
+        </group>
       </group>
-    </group>
+    </>
+  );
+}
+
+function CinematicSequence() {
+  const planetRef = useRef<THREE.Mesh>(null);
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    // Manually load to avoid Suspense crashing if the user hasn't copied the file yet
+    new THREE.TextureLoader().load(
+      '/planet_map.png',
+      (tex) => setTexture(tex),
+      undefined,
+      (err) => console.warn("Waiting for planet_map.png to be copied to public folder...")
+    );
+  }, []);
+
+  useFrame((state, delta) => {
+    const t = state.clock.elapsedTime % 16; // loop every 16 seconds
+
+    if (planetRef.current) {
+      // Phase 1: Planet passes from left to right (0 to 8 seconds)
+      if (t <= 8) {
+        planetRef.current.visible = true;
+        const progress = t / 8;
+        planetRef.current.position.x = -40 + (progress * 80);
+        planetRef.current.rotation.y += delta * 0.2;
+
+        if (materialRef.current) {
+          // Fade in at start, fade out at end
+          if (t < 2) materialRef.current.opacity = t / 2;
+          else if (t > 6) materialRef.current.opacity = Math.max(0, 1 - (t - 6) / 2);
+          else materialRef.current.opacity = 1;
+        }
+      } else {
+        planetRef.current.visible = false;
+      }
+    }
+  });
+
+  return (
+    <>
+      <mesh ref={planetRef} position={[-40, 0, -10]}>
+        <sphereGeometry args={[12, 64, 64]} />
+        <meshStandardMaterial
+          ref={materialRef}
+          map={texture}
+          color={texture ? "#ffffff" : "#1a103c"}
+          emissive="#2b1b6e"
+          emissiveIntensity={0.4}
+          roughness={0.9}
+          transparent
+          opacity={0}
+        />
+        <mesh>
+          <sphereGeometry args={[12.6, 64, 64]} />
+          <meshBasicMaterial color="#4b3dd6" transparent opacity={0.15} blending={THREE.AdditiveBlending} side={THREE.BackSide} />
+        </mesh>
+      </mesh>
+
+      {/* The Galaxy/Nebula is always spinning slowly in the background */}
+      <Nebula />
+    </>
   );
 }
 
 function Nebula() {
   const groupRef = useRef<THREE.Group>(null);
-  
+
   useFrame((_, delta) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * 0.05;
@@ -151,17 +223,17 @@ function LocalStars() {
   );
 }
 
-export default function HeroScene({ showPlanets = true }: { showPlanets?: boolean }) {
+export default function HeroScene({ showPlanets = false }: { showPlanets?: boolean }) {
   return (
     <div className="absolute inset-0 z-0 w-full h-full pointer-events-none">
-      <Canvas camera={{ position: showPlanets ? [0, 35, 65] : [0, 15, 35], fov: 45 }}>
+      <Canvas camera={{ position: showPlanets ? [0, 35, 65] : [0, 0, 35], fov: 45 }}>
         <fog attach="fog" args={["#000000", 30, 150]} />
-        <ambientLight intensity={showPlanets ? 0.6 : 0.8} />
-        {!showPlanets && <directionalLight position={[10, 10, 5]} intensity={1} color="#ffffff" />}
-        
-        {!showPlanets && <Nebula />}
+        <ambientLight intensity={showPlanets ? 0.6 : 0.2} />
+        {!showPlanets && <directionalLight position={[15, 10, 5]} intensity={1.5} color="#ffffff" />}
+
+        {!showPlanets && <CinematicSequence />}
         {showPlanets && <LocalStars />}
-        
+
         {showPlanets && (
           <Float speed={0.5} rotationIntensity={0.2} floatIntensity={0.2}>
             <group rotation={[0.2, 0, 0.05]}>
