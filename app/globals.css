@@ -16,8 +16,7 @@
 }
 
 body {
-  background: radial-gradient(circle at top, #140b2e 0%, #050510 50%, #000000 100%);
-  background-attachment: fixed;
+  background: #03010b; /* Deep, subtle sci-fi purple/indigo */
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
   overflow-x: hidden;
@@ -33,4 +32,13 @@ body {
 
 .animate-twinkle {
   animation: twinkle 4s ease-in-out infinite;
+}
+
+@keyframes periodic-text-glow {
+  0%, 100% { text-shadow: 0 0 2px rgba(255, 255, 255, 0.1); opacity: 0.6; color: white; }
+  50% { text-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 10px #818cf8; opacity: 1; color: white; }
+}
+
+.animate-periodic-text-glow {
+  animation: periodic-text-glow 3s ease-in-out infinite;
 }
