@@ -506,7 +506,7 @@ function CameraShake({ active }) {
  * The asteroid body uses a custom shader for realistic rocky surface
  * with glowing lava-vein cracks and atmospheric re-entry heating.
  */
-export default function Asteroid({ targetPosition, onImpact }) {
+export default function Asteroid({ targetPosition, targetRef, onImpact }) {
   const meshRef      = useRef()
   const glow1Ref     = useRef()
   const glow2Ref     = useRef()
@@ -629,7 +629,7 @@ export default function Asteroid({ targetPosition, onImpact }) {
 
     if (!meshRef.current || impactedRef.current) return
 
-    const target = targetPosition
+    const target = targetRef ? targetRef.current : targetPosition
 
     // Lerp toward Mars — accelerating as it gets closer
     const dx = target.x - posRef.current.x

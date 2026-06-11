@@ -42,19 +42,11 @@ function MarsFlash({ flash }) {
   )
 }
 
-function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMarsFlash }) {
-  const marsPositionRef = useRef({ x: 42, y: 0, z: 0 })
-  // Snapshot Mars position into state when asteroid effect fires
-  const [marsTarget, setMarsTarget] = useState({ x: 42, y: 0, z: 0 })
+function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMarsFlash, selectedPlanet }) {
+  const planetPositionsRef = useRef({})
+  
   const orbitRef = useRef()
   const { camera } = useThree()
-
-  // Capture Mars position at the moment the asteroid effect is triggered
-  useEffect(() => {
-    if (activeEffect === 'asteroid-hit-mars') {
-      setMarsTarget({ ...marsPositionRef.current })
-    }
-  }, [activeEffect])
 
   // Register camera reset into the module-level slot
   useEffect(() => {
@@ -103,10 +95,9 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
           timeMultiplier={multiplier}
           onPlanetClick={onPlanetClick}
           activeEffect={activeEffect}
-          onPositionUpdate={planet.name === 'Mars'
-            ? (pos) => { marsPositionRef.current = pos }
-            : null
-          }
+          onPositionUpdate={(pos) => { 
+            planetPositionsRef.current[planet.name] = pos 
+          }}
         />
       ))}
       {PLANETS.map((planet) => (
@@ -115,7 +106,7 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
       <AsteroidBelt count={3500} innerRadius={48} outerRadius={63} timeMultiplier={multiplier} />
       {activeEffect === 'asteroid-hit-mars' && (
         <Asteroid
-          targetPosition={marsTarget}
+          targetRef={{ current: planetPositionsRef.current['Mars'] || { x: 42, y: 0, z: 0 } }}
           onImpact={handleAsteroidImpact}
         />
       )}
@@ -196,6 +187,7 @@ export default function SolarSystem() {
           multiplier={multiplier}
           onPlanetClick={setSelectedPlanet}
           setMarsFlash={setMarsFlash}
+          selectedPlanet={selectedPlanet}
         />
       </Canvas>
 
