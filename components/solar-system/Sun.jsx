@@ -42,8 +42,9 @@ const SUN_MAT = new THREE.ShaderMaterial({
       vec3 white=vec3(1.00,0.98,0.92), yellow=vec3(1.00,0.84,0.22), orange=vec3(0.98,0.47,0.06);
       float t=clamp(g*.6+.4,0.,1.);
       vec3 col=mix(orange,yellow,t); col=mix(col,white,t*t*.5);
-      col*=limb; col=min(col*1.7,vec3(1.));
-      gl_FragColor=vec4(col,1.);
+      col*=limb; 
+      col=min(col*1.7,vec3(2.5));
+      gl_FragColor=vec4(col * 2.5, 1.0); // HDR intensity for Bloom
     }
   `,
 })

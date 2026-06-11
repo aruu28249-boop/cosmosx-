@@ -42,13 +42,6 @@ export default function Home() {
             <span>Simulate the Future.</span>
           </div>
           
-          {/* Neon Pill CTA */}
-          <Link href="/simulate" prefetch={true} className="flex items-center gap-3 px-10 py-4 rounded-full bg-[#1e1a4d]/60 border border-[#818cf8] text-white tracking-[0.2em] text-sm font-bold shadow-[0_0_20px_rgba(129,140,248,0.4)] hover:shadow-[0_0_40px_rgba(129,140,248,0.8)] hover:scale-105 hover:bg-[#1e1a4d]/80 transition-all duration-300 backdrop-blur-md cursor-pointer">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
-            </svg>
-            LAUNCH SIMULATOR
-          </Link>
         </div>
       </section>
 
