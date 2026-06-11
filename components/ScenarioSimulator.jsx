@@ -1,78 +1,83 @@
 'use client'
+
 import { useState } from 'react'
 import { triggerEffect, resetAll } from '@/components/SolarSystem'
 
 const SCENARIOS = [
   {
+    id: 'two-moons',
+    label: 'Two Moons',
+    question: 'What if Earth had two moons?',
+    color: '#a78bfa',
+    glow: 'rgba(167,139,250,0.3)',
+  },
+  {
     id: 'jupiter-disappear',
-    label: 'JUPITER VANISHES',
-    icon: '💫',
-    description: 'What if Jupiter suddenly vanished from the solar system?',
+    label: 'Jupiter Vanishes',
+    question: 'What if Jupiter disappeared?',
     color: '#f59e0b',
-    glow: 'rgba(245,158,11,0.35)',
+    glow: 'rgba(245,158,11,0.3)',
   },
   {
     id: 'asteroid-hit-mars',
-    label: 'ASTEROID STRIKES',
-    icon: '☄️',
-    description: 'What if a massive asteroid collided with Mars?',
+    label: 'Asteroid Strikes',
+    question: 'What if an asteroid hit Mars?',
     color: '#ef4444',
-    glow: 'rgba(239,68,68,0.35)',
+    glow: 'rgba(239,68,68,0.3)',
   },
   {
-    id: 'two-moons',
-    label: 'TWO MOONS',
-    icon: '🌕',
-    description: 'What if Earth had a second moon in orbit?',
-    color: '#a78bfa',
-    glow: 'rgba(167,139,250,0.35)',
+    id: 'sun-brighter',
+    label: 'Sun Gets Brighter',
+    question: 'What if the Sun became brighter?',
+    color: '#fbbf24',
+    glow: 'rgba(251,191,36,0.3)',
   },
 ]
 
-export default function ScenarioSimulator() {
+export default function ScenarioSimulator({ onScenarioSelect }) {
   const [activeId, setActiveId] = useState(null)
-  const [aiText,   setAiText]   = useState('')
-  const [loading,  setLoading]  = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
 
   const handleScenario = async (scenario) => {
-    triggerEffect(scenario.id)
     setActiveId(scenario.id)
-    setAiText('')
+    setResult(null)
+    setError(null)
     setLoading(true)
+    triggerEffect(scenario.id)
 
     try {
-      const res  = await fetch('/api/scenario', {
-        method:  'POST',
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ scenario: scenario.description }),
+        body: JSON.stringify({ scenarioId: scenario.id }),
       })
       const data = await res.json()
-      setAiText(data.explanation ?? 'No explanation returned.')
-    } catch {
-      setAiText('Could not reach AI service. Visual effect is still active.')
+      if (data.error) throw new Error(data.error)
+      setResult(data)
+      onScenarioSelect?.(scenario.id)
+    } catch (err) {
+      setError('Could not reach AI. Visual effect is still active.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleReset = () => {
-    resetAll()          // resets effects + camera + selected planet
+    resetAll()
     setActiveId(null)
-    setAiText('')
+    setResult(null)
+    setError(null)
     setLoading(false)
   }
 
-  const activeScenario = SCENARIOS.find(s => s.id === activeId)
+  const active = SCENARIOS.find(s => s.id === activeId)
 
   return (
-    /* Full-screen overlay, pointer-events off by default */
-    <div style={{
-      position: 'absolute', inset: 0,
-      pointerEvents: 'none',
-      zIndex: 20,
-    }}>
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>
 
-      {/* ══ LEFT PANEL ════════════════════════════════════════════════════ */}
+      {/* ── Scenario Cards (left panel) ─────────────────────────────── */}
       <div style={{
         position: 'absolute',
         left: '20px',
@@ -80,24 +85,20 @@ export default function ScenarioSimulator() {
         transform: 'translateY(-50%)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
+        gap: '8px',
         pointerEvents: 'auto',
-        width: '210px',
+        width: '220px',
       }}>
-
-        {/* Panel header */}
         <div style={{
-          fontSize: '10px',
-          letterSpacing: '0.18em',
-          color: 'rgba(255,255,255,0.35)',
-          fontFamily: 'sans-serif',
-          paddingLeft: '4px',
-          marginBottom: '2px',
+          fontSize: '9px',
+          letterSpacing: '0.2em',
+          color: 'rgba(255,255,255,0.3)',
+          marginBottom: '4px',
+          paddingLeft: '2px',
         }}>
-          ✦ SCENARIOS
+          ✦ AI SCENARIO SIMULATOR
         </div>
 
-        {/* Scenario buttons — stacked vertically */}
         {SCENARIOS.map(s => {
           const isActive = s.id === activeId
           return (
@@ -105,101 +106,158 @@ export default function ScenarioSimulator() {
               key={s.id}
               onClick={() => handleScenario(s)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 16px',
-                borderRadius: '14px',
-                border: isActive
-                  ? `1.5px solid ${s.color}aa`
-                  : '1.5px solid rgba(255,255,255,0.12)',
+                padding: '11px 14px',
+                borderRadius: '12px',
+                border: isActive ? `1.5px solid ${s.color}99` : '1.5px solid rgba(255,255,255,0.1)',
                 background: isActive
-                  ? `linear-gradient(135deg, ${s.color}22 0%, ${s.color}0a 100%)`
-                  : 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(14px)',
-                color: isActive ? s.color : 'rgba(255,255,255,0.75)',
+                  ? `linear-gradient(135deg, ${s.color}20 0%, ${s.color}08 100%)`
+                  : 'rgba(255,255,255,0.04)',
+                backdropFilter: 'blur(16px)',
+                color: isActive ? s.color : 'rgba(255,255,255,0.7)',
                 fontSize: '11px',
-                fontFamily: 'sans-serif',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.05em',
                 fontWeight: isActive ? '600' : '400',
                 cursor: 'pointer',
                 transition: 'all 0.25s ease',
-                boxShadow: isActive ? `0 0 18px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.08)` : 'none',
+                boxShadow: isActive ? `0 0 20px ${s.glow}` : 'none',
                 textAlign: 'left',
                 width: '100%',
               }}
             >
-              <span style={{ fontSize: '18px', flexShrink: 0 }}>{s.icon}</span>
-              <span>{s.label}</span>
+              <div style={{ fontWeight: 600, marginBottom: '2px' }}>{s.label}</div>
+              <div style={{ fontSize: '10px', opacity: 0.6, fontWeight: 400 }}>{s.question}</div>
             </button>
           )
         })}
 
-        {/* ── AI Analysis card ───────────────────────────────────────── */}
-        {(loading || aiText) && (
-          <div style={{
-            marginTop: '6px',
-            padding: '13px 15px',
-            borderRadius: '14px',
-            background: 'rgba(5,8,22,0.90)',
-            backdropFilter: 'blur(18px)',
-            border: `1px solid ${activeScenario?.color ?? 'rgba(255,255,255,0.12)'}55`,
-            boxShadow: `0 0 30px ${activeScenario?.glow ?? 'transparent'}`,
-            color: 'rgba(255,255,255,0.82)',
-            fontFamily: 'sans-serif',
-            fontSize: '12px',
-            lineHeight: '1.7',
-            letterSpacing: '0.02em',
-          }}>
-            <div style={{
-              fontSize: '9px',
-              letterSpacing: '0.14em',
-              color: activeScenario?.color ?? 'rgba(255,255,255,0.4)',
-              marginBottom: '7px',
-              opacity: 0.85,
-            }}>
-              ✦ AI ANALYSIS
-            </div>
-            {loading
-              ? <span style={{ opacity: 0.55, fontStyle: 'italic' }}>Analysing cosmic scenario…</span>
-              : aiText
-            }
-          </div>
-        )}
-
-        {/* ── Reset icon button ──────────────────────────────────────── */}
+        {/* Reset button */}
         <button
           onClick={handleReset}
-          title="Reset effects, camera & view"
+          title="Reset"
           style={{
-            marginTop: '8px',
+            marginTop: '4px',
             alignSelf: 'flex-start',
-            width: '42px',
-            height: '42px',
+            width: '36px',
+            height: '36px',
             borderRadius: '50%',
-            border: activeId
-              ? '1.5px solid rgba(239,68,68,0.55)'
-              : '1.5px solid rgba(255,255,255,0.13)',
-            background: activeId
-              ? 'rgba(239,68,68,0.18)'
-              : 'rgba(255,255,255,0.05)',
+            border: activeId ? '1.5px solid rgba(239,68,68,0.5)' : '1.5px solid rgba(255,255,255,0.1)',
+            background: activeId ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
             backdropFilter: 'blur(12px)',
             color: activeId ? '#fca5a5' : 'rgba(255,255,255,0.3)',
-            fontSize: '18px',
+            fontSize: '16px',
             cursor: 'pointer',
             transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: activeId ? '0 0 16px rgba(239,68,68,0.35)' : 'none',
-            lineHeight: 1,
           }}
         >
           ↺
         </button>
-
       </div>
-      {/* ══ END LEFT PANEL ════════════════════════════════════════════════ */}
+
+      {/* ── Result Panel (right side) ────────────────────────────────── */}
+      {(loading || result || error) && (
+        <div style={{
+          position: 'absolute',
+          right: '24px',
+          top: '80px',
+          bottom: '80px',
+          width: '300px',
+          pointerEvents: 'auto',
+          background: 'rgba(4,7,20,0.92)',
+          backdropFilter: 'blur(20px)',
+          border: `1px solid ${active?.color ?? 'rgba(255,255,255,0.12)'}44`,
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: `0 0 40px ${active?.glow ?? 'transparent'}`,
+          overflowY: 'auto',
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255,255,255,0.1) transparent',
+        }}>
+
+          {/* Header */}
+          <div style={{
+            fontSize: '9px',
+            letterSpacing: '0.2em',
+            color: active?.color ?? 'rgba(255,255,255,0.4)',
+            marginBottom: '12px',
+          }}>
+            ✦ AI ANALYSIS
+          </div>
+
+          {/* Loading spinner */}
+          {loading && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
+              <div style={{
+                width: '16px',
+                height: '16px',
+                border: `2px solid ${active?.color ?? '#fff'}33`,
+                borderTopColor: active?.color ?? '#fff',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+                flexShrink: 0,
+              }} />
+              Analysing cosmic scenario…
+              <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && !loading && (
+            <p style={{ color: 'rgba(255,100,100,0.8)', fontSize: '12px', lineHeight: 1.6 }}>{error}</p>
+          )}
+
+          {/* Result */}
+          {result && !loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+              {/* Explanation */}
+              <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '12px', lineHeight: 1.7 }}>
+                {result.explanation}
+              </p>
+
+              {/* Impact analysis */}
+              {result.impact?.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '7px' }}>
+                    IMPACT ANALYSIS
+                  </div>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    {result.impact.map((point, i) => (
+                      <li key={i} style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
+                        <span style={{ color: active?.color, flexShrink: 0, marginTop: '1px' }}>▸</span>
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Timeline */}
+              {result.timeline && (
+                <div>
+                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                    FUTURE TIMELINE
+                  </div>
+                  {[
+                    { label: '1 YEAR', value: result.timeline.oneYear },
+                    { label: '10 YEARS', value: result.timeline.tenYears },
+                    { label: '100 YEARS', value: result.timeline.hundredYears },
+                  ].map(({ label, value }) => value && (
+                    <div key={label} style={{ marginBottom: '8px', paddingLeft: '10px', borderLeft: `2px solid ${active?.color}55` }}>
+                      <div style={{ fontSize: '9px', color: active?.color, letterSpacing: '0.12em', marginBottom: '3px' }}>{label}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            </div>
+          )}
+
+        </div>
+      )}
 
     </div>
   )
