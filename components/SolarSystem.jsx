@@ -9,6 +9,7 @@ import Planet from './solar-system/Planet'
 import InfoPanel from './solar-system/InfoPanel'
 import TimeControls from './solar-system/TimeControls'
 import Asteroid from './solar-system/Asteroid'
+import AsteroidBelt from './solar-system/AsteroidBelt'
 import ShootingStars from './solar-system/ShootingStars'
 import * as THREE from 'three'
 
@@ -43,8 +44,7 @@ function MarsFlash({ flash }) {
 
 function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMarsFlash }) {
   const marsPositionRef = useRef({ x: 42, y: 0, z: 0 })
-  // Snapshot Mars position into state when asteroid effect fires,
-  // so we never access marsPositionRef.current during render.
+  // Snapshot Mars position into state when asteroid effect fires
   const [marsTarget, setMarsTarget] = useState({ x: 42, y: 0, z: 0 })
   const orbitRef = useRef()
   const { camera } = useThree()
@@ -112,6 +112,7 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
       {PLANETS.map((planet) => (
         <OrbitRing key={planet.name + '-ring'} radius={planet.orbitRadius} />
       ))}
+      <AsteroidBelt count={3500} innerRadius={48} outerRadius={63} timeMultiplier={multiplier} />
       {activeEffect === 'asteroid-hit-mars' && (
         <Asteroid
           targetPosition={marsTarget}

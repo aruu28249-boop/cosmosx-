@@ -220,7 +220,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   const moon2Ref      = useRef()
   const moonGlow1Ref  = useRef()
   const moonGlow2Ref  = useRef()
-  const angleRef      = useRef(Math.random() * Math.PI * 2)
+  const angleRef      = useRef(0)
   const moonAngleRef  = useRef(0)
   const moon2AngleRef = useRef(Math.PI)
   const opacityRef    = useRef(1)
@@ -262,7 +262,10 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   }), [moonGlowTex])
 
   useFrame(({ clock }, delta) => {
-    if (!meshRef.current) return
+    // Initialize random angle once
+    if (angleRef.current === 0 && data.orbitRadius > 0) {
+      angleRef.current = Math.random() * Math.PI * 2
+    }
 
     // Orbit
     angleRef.current += data.orbitSpeed * delta * timeMultiplier * 0.3
