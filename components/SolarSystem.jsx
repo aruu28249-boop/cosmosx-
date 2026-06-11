@@ -34,9 +34,9 @@ function MarsFlash({ flash }) {
   return (
     <div style={{
       position: 'absolute', inset: 0,
-      backgroundColor: 'rgba(220,30,10,0.5)',
+      background: 'radial-gradient(circle at 50% 50%, rgba(255,240,200,0.7) 0%, rgba(255,120,20,0.5) 30%, rgba(220,30,10,0.3) 55%, transparent 80%)',
       pointerEvents: 'none', zIndex: 5,
-      animation: 'marsFlash 1s ease-out forwards',
+      animation: 'marsFlash 1.2s ease-out forwards',
     }} />
   )
 }

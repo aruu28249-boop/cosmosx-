@@ -215,7 +215,7 @@ const PLANET_VISUALS = {
 export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate }) {
   const meshRef       = useRef()
   const atmoRef       = useRef()
-  const jupiterRingRef = useRef()
+
   const moonRef       = useRef()
   const moon2Ref      = useRef()
   const moonGlow1Ref  = useRef()
@@ -272,7 +272,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     meshRef.current.rotation.y += data.rotationSpeed * delta * timeMultiplier
 
     if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
-    if (jupiterRingRef.current) jupiterRingRef.current.position.set(x, 0, z)
+
     if (shaderMat?.uniforms) shaderMat.uniforms.time.value = clock.elapsedTime
     if (onPositionUpdate) onPositionUpdate({ x, y: 0, z })
 
@@ -337,14 +337,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
         </mesh>
       )}
 
-      {/* Jupiter faint ring — follows planet via jupiterRingRef */}
-      {data.name === 'Jupiter' && (
-        <mesh ref={jupiterRingRef} rotation={[Math.PI / 2.2, 0, 0]}>
-          <ringGeometry args={[data.size * 1.6, data.size * 2.5, 80]} />
-          <meshBasicMaterial color="#b8905a" transparent opacity={0.07}
-            side={THREE.DoubleSide} depthWrite={false} />
-        </mesh>
-      )}
+
 
       {/* Two moons with individual glow sprites */}
       {showTwoMoons && (
