@@ -37,6 +37,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   const [error,         setError]         = useState(null)
   const [speaking,      setSpeaking]      = useState(false)
   const audioRef = useRef(null)
+  const utteranceRef = useRef(null)
 
   // ── Custom question ───────────────────────────────────────────────────────
   const [customQ,       setCustomQ]       = useState('')
@@ -95,6 +96,10 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   }
 
   const stopSpeaking = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel()
     utteranceRef.current = null
     setSpeaking(false)
@@ -130,7 +135,30 @@ const parts = [data.explanation]
     } finally {
       setLoading(false)
     }
+  }, [])
+
+
+  const handleScenario = (s) => {
+    setActiveId(s.id)
+    triggerEffect(s.id)
+    runScenario({ scenarioId: s.id, label: s.label, color: s.color })
   }
+
+  const handleCustomSubmit = () => {
+    if (!customQ.trim() || customSending) return
+    setCustomSending(true)
+    setActiveId('custom')
+    const effect = pickEffect(customQ)
+    if (effect) triggerEffect(effect)
+    runScenario({ customQuestion: customQ.trim(), label: 'Custom', color: '#60a5fa' })
+      .finally(() => setCustomSending(false))
+  }
+
+  const handleTimeMachineChange = (year) => {
+    setTmYear(year)
+    setTimeMachineDate(year)
+  }
+
 
   const handleReset = () => {
     stopSpeaking()
