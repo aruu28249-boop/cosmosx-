@@ -16,6 +16,19 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Environment variables
+
+The **AI Scenario Simulator** (`/simulate`) calls the Groq API, so you need an API key for it to work. Without it the simulator still plays the 3D visual effects but the AI analysis panel shows a "not configured" message.
+
+1. Copy the example file:
+   ```bash
+   cp .env.example .env.local
+   ```
+2. Fill in the keys in `.env.local`:
+   - `GROQ_API_KEY` — **required** for scenario analysis. Get a free key at [console.groq.com/keys](https://console.groq.com/keys).
+   - `DEEPGRAM_API_KEY` — *optional*, enables the "🔊 speak" spoken narration. Get one at [console.deepgram.com](https://console.deepgram.com/).
+3. Restart the dev server so the new variables are picked up.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
