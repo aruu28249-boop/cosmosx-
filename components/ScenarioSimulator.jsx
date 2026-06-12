@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { triggerEffect, resetAll } from '@/components/SolarSystem'
 
 const SCENARIOS = [
@@ -39,8 +39,41 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const [speaking, setSpeaking] = useState(false)
+  const audioRef = useRef(null)
+
+  const speak = async (text) => {
+    stopSpeaking()
+    setSpeaking(true)
+    try {
+      const res = await fetch('/api/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      if (!res.ok) throw new Error('TTS failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url) }
+      audio.onerror = () => { setSpeaking(false); URL.revokeObjectURL(url) }
+      audio.play()
+    } catch {
+      setSpeaking(false)
+    }
+  }
+
+  const stopSpeaking = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+    setSpeaking(false)
+  }
 
   const handleScenario = async (scenario) => {
+    stopSpeaking()
     setActiveId(scenario.id)
     setResult(null)
     setError(null)
@@ -57,6 +90,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       if (data.error) throw new Error(data.error)
       setResult(data)
       onScenarioSelect?.(scenario.id)
+      if (data.explanation) speak(data.explanation)
     } catch (err) {
       setError('Could not reach AI. Visual effect is still active.')
     } finally {
@@ -65,6 +99,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   }
 
   const handleReset = () => {
+    stopSpeaking()
     resetAll()
     setActiveId(null)
     setResult(null)
@@ -177,13 +212,24 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
         }}>
 
           {/* Header */}
-          <div style={{
-            fontSize: '9px',
-            letterSpacing: '0.2em',
-            color: active?.color ?? 'rgba(255,255,255,0.4)',
-            marginBottom: '12px',
-          }}>
-            ✦ AI ANALYSIS
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: active?.color ?? 'rgba(255,255,255,0.4)' }}>
+              ✦ AI ANALYSIS
+            </div>
+            {result && (
+              <button
+                onClick={() => speaking ? stopSpeaking() : speak(result.explanation)}
+                style={{
+                  background: 'none', border: `1px solid ${active?.color ?? 'rgba(255,255,255,0.2)'}55`,
+                  borderRadius: '6px', padding: '3px 8px', cursor: 'pointer',
+                  color: speaking ? active?.color : 'rgba(255,255,255,0.4)',
+                  fontSize: '10px', letterSpacing: '0.08em',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {speaking ? '⏹ stop' : '🔊 speak'}
+              </button>
+            )}
           </div>
 
           {/* Loading spinner */}
