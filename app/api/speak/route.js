@@ -5,10 +5,15 @@ export async function POST(request) {
   if (!text) return NextResponse.json({ error: 'No text provided' }, { status: 400 })
   const safeText = text.length > 1999 ? text.slice(0, 1999) : text
 
+  const apiKey = process.env.DEEPGRAM_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'Deepgram API key not configured.' }, { status: 500 })
+  }
+
   const res = await fetch('https://api.deepgram.com/v1/speak?model=aura-2-pluto-en', {
     method: 'POST',
     headers: {
-      Authorization: `Token ${process.env.DEEPGRAM_API_KEY}`,
+      Authorization: `Token ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ text: safeText }),
