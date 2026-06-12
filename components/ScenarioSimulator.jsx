@@ -125,59 +125,11 @@ const parts = [data.explanation]
         if (data.timeline?.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
         speak(parts.join('. '))
       }
-    } catch { setError('Could not reach AI. Visual effect is still active.') }
-    finally { setLoading(false) }
-  }, [onScenarioSelect]) // eslint-disable-line
-
-  // ── URL auto-trigger (shareable links) ────────────────────────────────────
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const params = new URLSearchParams(window.location.search)
-      const s    = params.get('s')
-      const q    = params.get('q')
-      const year = params.get('year')
-
-      if (year) {
-        const y = parseInt(year)
-        if (!isNaN(y) && y >= 1900 && y <= 2200 && y !== currentYear) {
-          setTmYear(y); setTmOpen(true)
-          setTimeMachineDate(new Date(y, 0, 1))
-        }
-      }
-      if (s) {
-        const sc = SCENARIOS.find(sc => sc.id === s)
-        if (sc) { setActiveId(sc.id); triggerEffect(sc.id); runScenario({ scenarioId: sc.id, label: sc.label, color: sc.color }) }
-      } else if (q) {
-        const decoded = decodeURIComponent(q)
-        setCustomQ(decoded); setActiveId('custom')
-        const eff = pickEffect(decoded)
-        if (eff) triggerEffect(eff)
-        runScenario({ customQuestion: decoded, label: decoded, color: '#60a5fa' })
-      }
-    }, 800) // wait for 3D scene to mount
-    return () => clearTimeout(t)
-  }, []) // eslint-disable-line
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
-  const handleScenario = (scenario) => {
-    setActiveId(scenario.id)
-    triggerEffect(scenario.id)
-    runScenario({ scenarioId: scenario.id, label: scenario.label, color: scenario.color })
-  }
-
-  const handleCustomSubmit = async () => {
-    if (!customQ.trim() || customSending) return
-    setCustomSending(true)
-    setActiveId('custom')
-    const eff = pickEffect(customQ)
-    if (eff) triggerEffect(eff)
-    await runScenario({ customQuestion: customQ.trim(), label: customQ.trim(), color: '#60a5fa' })
-    setCustomSending(false)
-  }
-
-  const handleTimeMachineChange = (year) => {
-    setTmYear(year)
-    setTimeMachineDate(year === currentYear ? null : new Date(year, 0, 1))
+    } catch (err) {
+      setError('Could not reach AI. Visual effect is still active.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleReset = () => {
