@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { triggerEffect, resetAll } from '@/components/SolarSystem'
 
+
 const SCENARIOS = [
   {
     id: 'two-moons',
@@ -52,25 +53,38 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
         body: JSON.stringify({ text }),
       })
       if (!res.ok) throw new Error('TTS failed')
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
+      const mediaSource = new MediaSource()
+      const url = URL.createObjectURL(mediaSource)
       const audio = new Audio(url)
       audioRef.current = audio
+      audio.play()
+      mediaSource.addEventListener('sourceopen', async () => {
+        const sb = mediaSource.addSourceBuffer('audio/mpeg')
+        const reader = res.body.getReader()
+        const pump = async () => {
+          const { done, value } = await reader.read()
+          if (done) {
+            if (!sb.updating) mediaSource.endOfStream()
+            else sb.addEventListener('updateend', () => mediaSource.endOfStream(), { once: true })
+            return
+          }
+          sb.appendBuffer(value)
+          sb.addEventListener('updateend', pump, { once: true })
+        }
+        await pump()
+      })
       audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url) }
       audio.onerror = () => { setSpeaking(false); URL.revokeObjectURL(url) }
-      audio.play()
     } catch {
       setSpeaking(false)
     }
   }
 
   const stopSpeaking = () => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
-    }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
     setSpeaking(false)
   }
+
 
   const handleScenario = async (scenario) => {
     stopSpeaking()
@@ -90,7 +104,14 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       if (data.error) throw new Error(data.error)
       setResult(data)
       onScenarioSelect?.(scenario.id)
-      if (data.explanation) speak(data.explanation)
+      if (data.explanation) {
+        const parts = [data.explanation]
+        if (data.impact?.length) parts.push(data.impact.join('. '))
+        if (data.timeline?.oneYear)      parts.push('In the first year: ' + data.timeline.oneYear)
+        if (data.timeline?.tenYears)     parts.push('Over ten years: ' + data.timeline.tenYears)
+        if (data.timeline?.hundredYears) parts.push('After a hundred years: ' + data.timeline.hundredYears)
+        speak(parts.join('. '))
+      }
     } catch (err) {
       setError('Could not reach AI. Visual effect is still active.')
     } finally {
@@ -111,6 +132,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>
+
 
       {/* ── Scenario Cards (left panel) ─────────────────────────────── */}
       <div style={{
@@ -218,13 +240,20 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
             </div>
             {result && (
               <button
-                onClick={() => speaking ? stopSpeaking() : speak(result.explanation)}
+                onClick={() => {
+                  if (speaking) { stopSpeaking(); return }
+                  const parts = [result.explanation]
+                  if (result.impact?.length) parts.push(result.impact.join('. '))
+                  if (result.timeline?.oneYear)      parts.push('In the first year: ' + result.timeline.oneYear)
+                  if (result.timeline?.tenYears)     parts.push('Over ten years: ' + result.timeline.tenYears)
+                  if (result.timeline?.hundredYears) parts.push('After a hundred years: ' + result.timeline.hundredYears)
+                  speak(parts.join('. '))
+                }}
                 style={{
                   background: 'none', border: `1px solid ${active?.color ?? 'rgba(255,255,255,0.2)'}55`,
                   borderRadius: '6px', padding: '3px 8px', cursor: 'pointer',
                   color: speaking ? active?.color : 'rgba(255,255,255,0.4)',
-                  fontSize: '10px', letterSpacing: '0.08em',
-                  transition: 'all 0.2s',
+                  fontSize: '10px', letterSpacing: '0.08em', transition: 'all 0.2s',
                 }}
               >
                 {speaking ? '⏹ stop' : '🔊 speak'}
