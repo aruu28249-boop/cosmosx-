@@ -32,13 +32,18 @@ const DEFAULT_CAM_POS    = new THREE.Vector3(0, 50, 110)
 const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 0)
 
 function PostEffects({ activeEffect }) {
+  const isAsteroid = activeEffect === 'asteroid-hit-mars'
   return (
-    <EffectComposer>
+    <EffectComposer multisampling={isAsteroid ? 0 : 4}>
       <Bloom
-        intensity={activeEffect === 'sun-brighter' ? 2.2 : 1.5}
-        luminanceThreshold={0.55}
+        intensity={
+          activeEffect === 'sun-brighter' ? 2.2
+          : isAsteroid ? 0.7
+          : 1.5
+        }
+        luminanceThreshold={isAsteroid ? 0.7 : 0.55}
         luminanceSmoothing={0.25}
-        mipmapBlur
+        mipmapBlur={!isAsteroid}
       />
     </EffectComposer>
   )
@@ -59,7 +64,8 @@ function MarsFlash({ flash }) {
 function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMarsFlash, selectedPlanet }) {
   const planetPositionsRef = useRef({})
   const marsPositionRef    = useRef({ x: 42, y: 0, z: 0 })
-  
+  const [controlsLocked, setControlsLocked] = useState(false)
+
   const orbitRef = useRef()
   const { camera } = useThree()
 
@@ -96,6 +102,7 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
       <ShootingStars />
       <OrbitControls
         ref={orbitRef}
+        enabled={!controlsLocked}
         enableZoom={true}
         enableRotate={true}
         enablePan={false}
@@ -123,11 +130,18 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
       {PLANETS.map((planet) => (
         <OrbitRing key={planet.name + '-ring'} radius={planet.orbitRadius} />
       ))}
-      <AsteroidBelt count={3500} innerRadius={48} outerRadius={63} timeMultiplier={multiplier} />
+      <AsteroidBelt
+        count={multiplier >= 10 ? 1800 : 3500}
+        innerRadius={48}
+        outerRadius={63}
+        timeMultiplier={multiplier}
+      />
       {activeEffect === 'asteroid-hit-mars' && (
         <Asteroid
           targetRef={marsPositionRef}
+          timeMultiplier={multiplier}
           onImpact={handleAsteroidImpact}
+          onExplosionChange={setControlsLocked}
         />
       )}
       <PostEffects activeEffect={activeEffect} />

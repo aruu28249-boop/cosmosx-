@@ -41,47 +41,40 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [speaking, setSpeaking] = useState(false)
-  const audioRef = useRef(null)
+  const utteranceRef = useRef(null)
 
-  const speak = async (text) => {
+  const speak = (text, delayMs = 0) => {
     stopSpeaking()
-    setSpeaking(true)
-    try {
-      const res = await fetch('/api/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      })
-      if (!res.ok) throw new Error('TTS failed')
-      const mediaSource = new MediaSource()
-      const url = URL.createObjectURL(mediaSource)
-      const audio = new Audio(url)
-      audioRef.current = audio
-      audio.play()
-      mediaSource.addEventListener('sourceopen', async () => {
-        const sb = mediaSource.addSourceBuffer('audio/mpeg')
-        const reader = res.body.getReader()
-        const pump = async () => {
-          const { done, value } = await reader.read()
-          if (done) {
-            if (!sb.updating) mediaSource.endOfStream()
-            else sb.addEventListener('updateend', () => mediaSource.endOfStream(), { once: true })
-            return
-          }
-          sb.appendBuffer(value)
-          sb.addEventListener('updateend', pump, { once: true })
-        }
-        await pump()
-      })
-      audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url) }
-      audio.onerror = () => { setSpeaking(false); URL.revokeObjectURL(url) }
-    } catch {
-      setSpeaking(false)
+    if (!('speechSynthesis' in window)) return
+
+    const run = () => {
+      window.speechSynthesis.cancel()
+      const utter = new SpeechSynthesisUtterance(text)
+      utter.rate  = 1.05
+      utter.pitch = 1.0
+      // Prefer a natural-sounding voice if available
+      const voices = window.speechSynthesis.getVoices()
+      const preferred = voices.find(v =>
+        /google|natural|premium|enhanced/i.test(v.name)
+      ) || voices.find(v => v.lang.startsWith('en')) || null
+      if (preferred) utter.voice = preferred
+      utter.onstart  = () => setSpeaking(true)
+      utter.onend    = () => setSpeaking(false)
+      utter.onerror  = () => setSpeaking(false)
+      utteranceRef.current = utter
+      window.speechSynthesis.speak(utter)
+    }
+
+    if (delayMs > 0) {
+      setTimeout(run, delayMs)
+    } else {
+      run()
     }
   }
 
   const stopSpeaking = () => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+    utteranceRef.current = null
     setSpeaking(false)
   }
 
@@ -105,12 +98,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       setResult(data)
       onScenarioSelect?.(scenario.id)
       if (data.explanation) {
-        const parts = [data.explanation]
-        if (data.impact?.length) parts.push(data.impact.join('. '))
-        if (data.timeline?.oneYear)      parts.push('In the first year: ' + data.timeline.oneYear)
-        if (data.timeline?.tenYears)     parts.push('Over ten years: ' + data.timeline.tenYears)
-        if (data.timeline?.hundredYears) parts.push('After a hundred years: ' + data.timeline.hundredYears)
-        speak(parts.join('. '))
+        speak(data.explanation, scenario.id === 'asteroid-hit-mars' ? 2200 : 0)
       }
     } catch (err) {
       setError('Could not reach AI. Visual effect is still active.')
@@ -242,12 +230,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
               <button
                 onClick={() => {
                   if (speaking) { stopSpeaking(); return }
-                  const parts = [result.explanation]
-                  if (result.impact?.length) parts.push(result.impact.join('. '))
-                  if (result.timeline?.oneYear)      parts.push('In the first year: ' + result.timeline.oneYear)
-                  if (result.timeline?.tenYears)     parts.push('Over ten years: ' + result.timeline.tenYears)
-                  if (result.timeline?.hundredYears) parts.push('After a hundred years: ' + result.timeline.hundredYears)
-                  speak(parts.join('. '))
+                  speak(result.explanation)
                 }}
                 style={{
                   background: 'none', border: `1px solid ${active?.color ?? 'rgba(255,255,255,0.2)'}55`,
