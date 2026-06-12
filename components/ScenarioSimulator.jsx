@@ -562,7 +562,7 @@ const parts = [data.explanation]
                       return (
                         <button key={i} onClick={() => handleQuizAnswer(i)} disabled={answered} style={{
                           padding: '10px 14px', borderRadius: '10px',
-                          border, background, color, fontSize: '12px',
+                          border, bg, color, fontSize: '12px',
                           textAlign: 'left', lineHeight: 1.4,
                           cursor: answered ? 'default' : 'pointer', transition: 'all 0.2s',
                           fontFamily: 'sans-serif',
