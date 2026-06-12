@@ -87,7 +87,7 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
         minDistance={30}
         maxDistance={240}
       />
-      <Sun />
+      <Sun activeEffect={activeEffect} />
       {PLANETS.map((planet) => (
         <Planet
           key={planet.name}
@@ -175,6 +175,7 @@ export default function SolarSystem() {
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <style>{`
         @keyframes marsFlash { 0% { opacity:1; } 100% { opacity:0; } }
+        @keyframes sunPulse { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
       `}</style>
 
       <Canvas
@@ -192,6 +193,16 @@ export default function SolarSystem() {
       </Canvas>
 
       <MarsFlash flash={marsFlash} />
+
+      {/* Sun brighter overlay */}
+      {activeEffect === 'sun-brighter' && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
+          background: 'radial-gradient(circle at 50% 50%, rgba(255,240,180,0.18) 0%, rgba(255,200,80,0.08) 40%, transparent 70%)',
+          animation: 'sunPulse 2s ease-in-out infinite',
+        }} />
+      )}
+
       <InteractionHints />
 
       <InfoPanel

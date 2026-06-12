@@ -98,24 +98,30 @@ const MAT5 = new THREE.SpriteMaterial({
 })
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function Sun() {
-  const coreRef = useRef()
-  const g1Ref   = useRef()
-  const g2Ref   = useRef()
-  const g3Ref   = useRef()
-  const g4Ref   = useRef()
-  const g5Ref   = useRef()
+export default function Sun({ activeEffect }) {
+  const coreRef      = useRef()
+  const g1Ref        = useRef()
+  const g2Ref        = useRef()
+  const g3Ref        = useRef()
+  const g4Ref        = useRef()
+  const g5Ref        = useRef()
+  const brighterRef  = useRef(1.0) // current scale multiplier
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
     SUN_MAT.uniforms.time.value = t
     if (coreRef.current) coreRef.current.rotation.y += 0.0007
 
-    if (g1Ref.current) { const s = 13.0 + Math.sin(t * 1.3) * 0.4;  g1Ref.current.scale.set(s, s, 1) }
-    if (g2Ref.current) { const s = 20.0 + Math.sin(t * 0.9 + 1.0) * 0.7; g2Ref.current.scale.set(s, s, 1); MAT2.opacity = 0.90 + Math.sin(t * 1.1) * 0.08 }
-    if (g3Ref.current) { const s = 32.0 + Math.sin(t * 0.7 + 2.0) * 1.2; g3Ref.current.scale.set(s, s, 1); MAT3.opacity = 0.85 + Math.sin(t * 0.8) * 0.10 }
-    if (g4Ref.current) { const s = 52.0 + Math.sin(t * 0.5 + 0.5) * 1.8; g4Ref.current.scale.set(s, s, 1); MAT4.opacity = 0.80 + Math.sin(t * 0.6) * 0.12 }
-    if (g5Ref.current) { const s = 85.0 + Math.sin(t * 0.35 + 3.0) * 2.5; g5Ref.current.scale.set(s, s, 1); MAT5.opacity = 0.75 + Math.sin(t * 0.4) * 0.15 }
+    // Smoothly grow multiplier toward 1.8 when sun-brighter, else back to 1.0
+    const target = activeEffect === 'sun-brighter' ? 1.8 : 1.0
+    brighterRef.current += (target - brighterRef.current) * 0.02
+    const m = brighterRef.current
+
+    if (g1Ref.current) { const s = (13.0 + Math.sin(t * 1.3) * 0.4) * m;  g1Ref.current.scale.set(s, s, 1) }
+    if (g2Ref.current) { const s = (20.0 + Math.sin(t * 0.9 + 1.0) * 0.7) * m; g2Ref.current.scale.set(s, s, 1); MAT2.opacity = Math.min(1, (0.90 + Math.sin(t * 1.1) * 0.08) * m) }
+    if (g3Ref.current) { const s = (32.0 + Math.sin(t * 0.7 + 2.0) * 1.2) * m; g3Ref.current.scale.set(s, s, 1); MAT3.opacity = Math.min(1, (0.85 + Math.sin(t * 0.8) * 0.10) * m) }
+    if (g4Ref.current) { const s = (52.0 + Math.sin(t * 0.5 + 0.5) * 1.8) * m; g4Ref.current.scale.set(s, s, 1); MAT4.opacity = Math.min(1, (0.80 + Math.sin(t * 0.6) * 0.12) * m) }
+    if (g5Ref.current) { const s = (85.0 + Math.sin(t * 0.35 + 3.0) * 2.5) * m; g5Ref.current.scale.set(s, s, 1); MAT5.opacity = Math.min(1, (0.75 + Math.sin(t * 0.4) * 0.15) * m) }
   })
 
   return (
