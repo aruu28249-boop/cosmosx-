@@ -212,18 +212,19 @@ const PLANET_VISUALS = {
   },
 }
 
-export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate }) {
-  const meshRef       = useRef()
-  const atmoRef       = useRef()
+export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle }) {
+  const meshRef        = useRef()
+  const atmoRef        = useRef()
 
-  const moonRef       = useRef()
-  const moon2Ref      = useRef()
-  const moonGlow1Ref  = useRef()
-  const moonGlow2Ref  = useRef()
-  const angleRef      = useRef(0)
-  const moonAngleRef  = useRef(0)
-  const moon2AngleRef = useRef(Math.PI)
-  const opacityRef    = useRef(1)
+  const moonRef        = useRef()
+  const moon2Ref       = useRef()
+  const moonGlow1Ref   = useRef()
+  const moonGlow2Ref   = useRef()
+  const angleRef       = useRef(0)
+  const moonAngleRef   = useRef(0)
+  const moon2AngleRef  = useRef(Math.PI)
+  const opacityRef     = useRef(1)
+  const initializedRef = useRef(false)
 
   const visual = PLANET_VISUALS[data.name]
 
@@ -262,13 +263,23 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   }), [moonGlowTex])
 
   useFrame(({ clock }, delta) => {
-    // Initialize random angle once
-    if (angleRef.current === 0 && data.orbitRadius > 0) {
-      angleRef.current = Math.random() * Math.PI * 2
+    // Initialize with real orbital angle on first frame
+    if (!initializedRef.current) {
+      initializedRef.current = true
+      angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
     }
 
-    // Orbit
-    angleRef.current += data.orbitSpeed * delta * timeMultiplier * 0.3
+    // Time machine mode: lerp toward target angle (shortest arc), orbit frozen
+    if (timeMachineAngle != null) {
+      const current = angleRef.current % (2 * Math.PI)
+      let diff = timeMachineAngle - current
+      if (diff > Math.PI)  diff -= 2 * Math.PI
+      if (diff < -Math.PI) diff += 2 * Math.PI
+      angleRef.current += diff * 0.05
+    } else {
+      // Normal orbit
+      angleRef.current += data.orbitSpeed * delta * timeMultiplier * 0.3
+    }
     const x = Math.cos(angleRef.current) * data.orbitRadius
     const z = Math.sin(angleRef.current) * data.orbitRadius
     meshRef.current.position.set(x, 0, z)
