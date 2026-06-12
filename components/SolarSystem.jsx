@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { PLANETS } from '@/data/planets'
 import Sun from './solar-system/Sun'
 import OrbitRing from './solar-system/OrbitRing'
@@ -30,6 +31,19 @@ export function resetAll() {
 const DEFAULT_CAM_POS    = new THREE.Vector3(0, 50, 110)
 const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 0)
 
+function PostEffects({ activeEffect }) {
+  return (
+    <EffectComposer>
+      <Bloom
+        intensity={activeEffect === 'sun-brighter' ? 2.2 : 1.5}
+        luminanceThreshold={0.55}
+        luminanceSmoothing={0.25}
+        mipmapBlur
+      />
+    </EffectComposer>
+  )
+}
+
 function MarsFlash({ flash }) {
   if (!flash) return null
   return (
@@ -44,6 +58,7 @@ function MarsFlash({ flash }) {
 
 function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMarsFlash, selectedPlanet }) {
   const planetPositionsRef = useRef({})
+  const marsPositionRef    = useRef({ x: 42, y: 0, z: 0 })
   
   const orbitRef = useRef()
   const { camera } = useThree()
@@ -96,7 +111,12 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
           onPlanetClick={onPlanetClick}
           activeEffect={activeEffect}
           onPositionUpdate={(pos) => { 
-            planetPositionsRef.current[planet.name] = pos 
+            planetPositionsRef.current[planet.name] = pos
+            if (planet.name === 'Mars') {
+              marsPositionRef.current.x = pos.x
+              marsPositionRef.current.y = pos.y
+              marsPositionRef.current.z = pos.z
+            }
           }}
         />
       ))}
@@ -106,10 +126,11 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
       <AsteroidBelt count={3500} innerRadius={48} outerRadius={63} timeMultiplier={multiplier} />
       {activeEffect === 'asteroid-hit-mars' && (
         <Asteroid
-          targetRef={{ current: planetPositionsRef.current['Mars'] || { x: 42, y: 0, z: 0 } }}
+          targetRef={marsPositionRef}
           onImpact={handleAsteroidImpact}
         />
       )}
+      <PostEffects activeEffect={activeEffect} />
     </>
   )
 }
