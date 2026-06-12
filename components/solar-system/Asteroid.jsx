@@ -506,6 +506,9 @@ function CameraShake({ active }) {
  * The asteroid body uses a custom shader for realistic rocky surface
  * with glowing lava-vein cracks and atmospheric re-entry heating.
  */
+const ASTEROID_SPEED  = 130
+const IMPACT_RADIUS   = 3.8
+
 export default function Asteroid({ targetPosition, targetRef, onImpact }) {
   const meshRef      = useRef()
   const glow1Ref     = useRef()
@@ -515,6 +518,8 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
   const lightRef     = useRef()
   const trailRef     = useRef()
   const posRef       = useRef({ x: -150, y: 20, z: -80 })
+  const prevTargetRef = useRef(null)
+  const velRef       = useRef({ x: 0, z: 0 })
   const impactedRef  = useRef(false)
   const trailIdx     = useRef(0)
   const trailTimer   = useRef(0)
@@ -630,16 +635,39 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
     if (!meshRef.current || impactedRef.current) return
 
     const target = targetRef ? targetRef.current : targetPosition
+    if (!target) return
 
-    // Lerp toward Mars — accelerating as it gets closer
-    const dx = target.x - posRef.current.x
-    const dz = target.z - posRef.current.z
-    const dist = Math.sqrt(dx * dx + dz * dz)
-    const speedFactor = 0.6 + Math.max(0, (1 - dist / 150)) * 0.8
+    // Track Mars velocity so we can lead the intercept, not chase its tail
+    if (prevTargetRef.current) {
+      const invDt = 1 / Math.max(delta, 0.001)
+      velRef.current.x = (target.x - prevTargetRef.current.x) * invDt
+      velRef.current.z = (target.z - prevTargetRef.current.z) * invDt
+    }
+    prevTargetRef.current = { x: target.x, z: target.z }
 
-    posRef.current.x += dx * delta * speedFactor
-    posRef.current.y += (0 - posRef.current.y) * delta * speedFactor
-    posRef.current.z += dz * delta * speedFactor
+    const toMarsX = target.x - posRef.current.x
+    const toMarsZ = target.z - posRef.current.z
+    const marsDist = Math.hypot(toMarsX, toMarsZ)
+
+    // Aim ahead of Mars based on time-to-reach
+    const leadTime = Math.min(Math.max(marsDist / ASTEROID_SPEED, 0.4), 3.5)
+    const aimX = target.x + velRef.current.x * leadTime
+    const aimZ = target.z + velRef.current.z * leadTime
+
+    const dx = aimX - posRef.current.x
+    const dz = aimZ - posRef.current.z
+    const aimDist = Math.hypot(dx, dz)
+    const dist = marsDist
+
+    // Fixed-speed homing — fast enough to overtake an orbiting planet
+    if (aimDist > 0.001) {
+      const step = ASTEROID_SPEED * delta
+      const ratio = Math.min(step / aimDist, 1)
+      posRef.current.x += dx * ratio
+      posRef.current.z += dz * ratio
+    }
+
+    posRef.current.y += (target.y - posRef.current.y) * delta * 3.5
 
     const px = posRef.current.x
     const py = posRef.current.y
@@ -686,8 +714,8 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
       lightRef.current.intensity = 3 + Math.max(0, (1 - dist / 100)) * 18
     }
 
-    // Impact check
-    if (dist < 2.5) {
+    // Impact check — use live Mars position, not the lead point
+    if (marsDist < IMPACT_RADIUS) {
       impactedRef.current = true
       meshRef.current.visible = false
       if (glow1Ref.current) glow1Ref.current.visible = false
