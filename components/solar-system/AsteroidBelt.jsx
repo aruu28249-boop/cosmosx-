@@ -65,13 +65,22 @@ export default function AsteroidBelt({ count = 2000, innerRadius = 50, outerRadi
     beltData.current = { positions, scales, rotations, speeds, phases, colors }
   }
 
+  const frameRef = useRef(0)
+
   useFrame((_, delta) => {
     if (!meshRef.current || !beltData.current) return
     const { positions, scales, rotations, speeds, phases, colors } = beltData.current
 
+    // Skip frames at extreme speeds to keep the sim responsive
+    const skip = timeMultiplier >= 100 ? 4 : timeMultiplier >= 10 ? 2 : 1
+    frameRef.current++
+    if (frameRef.current % skip !== 0) return
+
+    const dt = Math.min(delta * skip, 0.05)
+    const cappedMult = Math.min(timeMultiplier, 30)
+
     for (let i = 0; i < count; i++) {
-      // Update angle (slowed down significantly)
-      phases[i] += speeds[i] * delta * timeMultiplier * 0.8
+      phases[i] += speeds[i] * dt * cappedMult * 0.8
       
       const distance = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2])
       

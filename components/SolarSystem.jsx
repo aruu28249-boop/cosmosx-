@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { PLANETS } from '@/data/planets'
 import { getPlanetAngles } from '@/lib/orbital-mechanics'
 import Sun from './solar-system/Sun'
@@ -35,6 +36,24 @@ export function setTimeMachineDate(date) {
 const DEFAULT_CAM_POS    = new THREE.Vector3(0, 50, 110)
 const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 0)
 
+function PostEffects({ activeEffect }) {
+  const isAsteroid = activeEffect === 'asteroid-hit-mars'
+  return (
+    <EffectComposer multisampling={isAsteroid ? 0 : 4}>
+      <Bloom
+        intensity={
+          activeEffect === 'sun-brighter' ? 2.2
+          : isAsteroid ? 0.7
+          : 1.5
+        }
+        luminanceThreshold={isAsteroid ? 0.7 : 0.55}
+        luminanceSmoothing={0.25}
+        mipmapBlur={!isAsteroid}
+      />
+    </EffectComposer>
+  )
+}
+
 function MarsFlash({ flash }) {
   if (!flash) return null
   return (
@@ -52,6 +71,9 @@ function Scene({
   setMarsFlash, selectedPlanet, surfacePlanet, initialAngles, timeMachineAngles,
 }) {
   const planetPositionsRef = useRef({})
+  const marsPositionRef    = useRef({ x: 42, y: 0, z: 0 })
+  const [controlsLocked, setControlsLocked] = useState(false)
+
   const orbitRef = useRef()
   const { camera } = useThree()
 
@@ -108,8 +130,9 @@ function Scene({
       <ShootingStars />
       <OrbitControls
         ref={orbitRef}
-        enableZoom={!surfacePlanet}
-        enableRotate={!surfacePlanet}
+        enabled={!controlsLocked}
+        enableZoom={true}
+        enableRotate={true}
         enablePan={false}
         minDistance={30}
         maxDistance={240}
@@ -122,21 +145,34 @@ function Scene({
           timeMultiplier={multiplier}
           onPlanetClick={onPlanetClick}
           activeEffect={activeEffect}
-          onPositionUpdate={(pos) => { planetPositionsRef.current[planet.name] = pos }}
-          initialAngle={initialAngles?.[planet.name]}
-          timeMachineAngle={timeMachineAngles?.[planet.name] ?? null}
+          onPositionUpdate={(pos) => { 
+            planetPositionsRef.current[planet.name] = pos
+            if (planet.name === 'Mars') {
+              marsPositionRef.current.x = pos.x
+              marsPositionRef.current.y = pos.y
+              marsPositionRef.current.z = pos.z
+            }
+          }}
         />
       ))}
       {PLANETS.map((planet) => (
         <OrbitRing key={planet.name + '-ring'} radius={planet.orbitRadius} />
       ))}
-      <AsteroidBelt count={3500} innerRadius={48} outerRadius={63} timeMultiplier={multiplier} />
+      <AsteroidBelt
+        count={multiplier >= 10 ? 1800 : 3500}
+        innerRadius={48}
+        outerRadius={63}
+        timeMultiplier={multiplier}
+      />
       {activeEffect === 'asteroid-hit-mars' && (
         <Asteroid
-          targetRef={{ current: planetPositionsRef.current['Mars'] || { x: 42, y: 0, z: 0 } }}
+          targetRef={marsPositionRef}
+          timeMultiplier={multiplier}
           onImpact={handleAsteroidImpact}
+          onExplosionChange={setControlsLocked}
         />
       )}
+      <PostEffects activeEffect={activeEffect} />
     </>
   )
 }

@@ -30,7 +30,7 @@ function saveQuizStore(obj) {
 }
 
 export default function ScenarioSimulator({ onScenarioSelect }) {
-  // ── Scenario state ────────────────────────────────────────────────────────
+// ── Scenario state ────────────────────────────────────────────────────────
   const [activeId,      setActiveId]      = useState(null)
   const [loading,       setLoading]       = useState(false)
   const [result,        setResult]        = useState(null)
@@ -95,7 +95,8 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   }
 
   const stopSpeaking = () => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+    utteranceRef.current = null
     setSpeaking(false)
   }
 
@@ -117,7 +118,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       setResult({ ...data, label, color })
       onScenarioSelect?.(scenarioId ?? 'custom')
       if (data.explanation) {
-        const parts = [data.explanation]
+const parts = [data.explanation]
         if (data.impact?.length)         parts.push(data.impact.join('. '))
         if (data.timeline?.oneYear)      parts.push('In the first year: '       + data.timeline.oneYear)
         if (data.timeline?.tenYears)     parts.push('Over ten years: '          + data.timeline.tenYears)
@@ -425,13 +426,9 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
               {result && (
                 <button onClick={() => {
                   if (speaking) { stopSpeaking(); return }
-                  const parts = [result.explanation]
-                  if (result.impact?.length)         parts.push(result.impact.join('. '))
-                  if (result.timeline?.oneYear)      parts.push('In the first year: '     + result.timeline.oneYear)
-                  if (result.timeline?.tenYears)     parts.push('Over ten years: '        + result.timeline.tenYears)
-                  if (result.timeline?.hundredYears) parts.push('After a hundred years: ' + result.timeline.hundredYears)
-                  speak(parts.join('. '))
-                }} style={{
+                  speak(result.explanation)
+                }}
+                style={{
                   background: 'none', border: `1px solid ${active?.color ?? 'rgba(255,255,255,0.2)'}55`,
                   borderRadius: '6px', padding: '3px 8px', cursor: 'pointer',
                   color: speaking ? active?.color : 'rgba(255,255,255,0.4)',

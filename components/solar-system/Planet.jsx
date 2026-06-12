@@ -263,27 +263,19 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   }), [moonGlowTex])
 
   useFrame(({ clock }, delta) => {
-    // Initialize with real orbital angle on first frame
-    if (!initializedRef.current) {
-      initializedRef.current = true
-      angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
+    const dt = Math.min(delta, 0.033)
+
+    // Initialize random angle once
+    if (angleRef.current === 0 && data.orbitRadius > 0) {
+      angleRef.current = Math.random() * Math.PI * 2
     }
 
-    // Time machine mode: lerp toward target angle (shortest arc), orbit frozen
-    if (timeMachineAngle != null) {
-      const current = angleRef.current % (2 * Math.PI)
-      let diff = timeMachineAngle - current
-      if (diff > Math.PI)  diff -= 2 * Math.PI
-      if (diff < -Math.PI) diff += 2 * Math.PI
-      angleRef.current += diff * 0.05
-    } else {
-      // Normal orbit
-      angleRef.current += data.orbitSpeed * delta * timeMultiplier * 0.3
-    }
+    // Orbit — cap dt so extreme speeds don't cause visible jumps
+    angleRef.current += data.orbitSpeed * dt * timeMultiplier * 0.3
     const x = Math.cos(angleRef.current) * data.orbitRadius
     const z = Math.sin(angleRef.current) * data.orbitRadius
     meshRef.current.position.set(x, 0, z)
-    meshRef.current.rotation.y += data.rotationSpeed * delta * timeMultiplier
+    meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier
 
     if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
 
@@ -307,14 +299,14 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     // Two moons orbiting Earth
     if (data.name === 'Earth' && activeEffect === 'two-moons') {
       if (moonRef.current) {
-        moonAngleRef.current += delta * 1.8
+        moonAngleRef.current += dt * 1.8
         const mx = x + Math.cos(moonAngleRef.current) * 4.5
         const mz = z + Math.sin(moonAngleRef.current) * 4.5
         moonRef.current.position.set(mx, 0, mz)
         if (moonGlow1Ref.current) moonGlow1Ref.current.position.set(mx, 0, mz)
       }
       if (moon2Ref.current) {
-        moon2AngleRef.current += delta * 1.2
+        moon2AngleRef.current += dt * 1.2
         const mx2 = x + Math.cos(moon2AngleRef.current) * 6.2
         const mz2 = z + Math.sin(moon2AngleRef.current) * 6.2
         moon2Ref.current.position.set(mx2, 0.5, mz2)
