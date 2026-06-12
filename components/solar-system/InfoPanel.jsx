@@ -1,4 +1,4 @@
-export default function InfoPanel({ planet, onClose }) {
+export default function InfoPanel({ planet, onClose, onExploreSurface }) {
   if (!planet) return null
 
   const accentColors = {
@@ -106,6 +106,28 @@ export default function InfoPanel({ planet, onClose }) {
           </div>
           {planet.funFact}
         </div>
+
+        {/* Explore Surface button */}
+        <button
+          onClick={() => onExploreSurface?.(planet.name)}
+          style={{
+            width: '100%',
+            padding: '10px',
+            borderRadius: '10px',
+            border: `1px solid ${accent}55`,
+            background: `${accent}18`,
+            color: accent,
+            fontSize: '11px',
+            letterSpacing: '0.12em',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            fontFamily: 'sans-serif',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = `${accent}30` }}
+          onMouseLeave={e => { e.currentTarget.style.background = `${accent}18` }}
+        >
+          ⬡ EXPLORE SURFACE
+        </button>
       </div>
     </div>
   )

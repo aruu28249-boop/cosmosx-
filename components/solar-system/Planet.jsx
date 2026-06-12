@@ -212,18 +212,19 @@ const PLANET_VISUALS = {
   },
 }
 
-export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate }) {
-  const meshRef       = useRef()
-  const atmoRef       = useRef()
+export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle }) {
+  const meshRef        = useRef()
+  const atmoRef        = useRef()
 
-  const moonRef       = useRef()
-  const moon2Ref      = useRef()
-  const moonGlow1Ref  = useRef()
-  const moonGlow2Ref  = useRef()
-  const angleRef      = useRef(0)
-  const moonAngleRef  = useRef(0)
-  const moon2AngleRef = useRef(Math.PI)
-  const opacityRef    = useRef(1)
+  const moonRef        = useRef()
+  const moon2Ref       = useRef()
+  const moonGlow1Ref   = useRef()
+  const moonGlow2Ref   = useRef()
+  const angleRef       = useRef(0)
+  const moonAngleRef   = useRef(0)
+  const moon2AngleRef  = useRef(Math.PI)
+  const opacityRef     = useRef(1)
+  const initializedRef = useRef(false)
 
   const visual = PLANET_VISUALS[data.name]
 

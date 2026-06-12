@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server'
-import { prompts } from '@/data/prompts'
+import { prompts, buildCustomPrompt } from '@/data/prompts'
 
 export async function POST(request) {
   try {
-    const { scenarioId } = await request.json()
+    const { scenarioId, customQuestion } = await request.json()
 
-    if (!scenarioId || !prompts[scenarioId]) {
-      return NextResponse.json({ error: 'Invalid scenario ID.' }, { status: 400 })
+    let prompt
+    if (customQuestion?.trim()) {
+      prompt = buildCustomPrompt(customQuestion.trim())
+    } else if (scenarioId && prompts[scenarioId]) {
+      prompt = prompts[scenarioId]
+    } else {
+      return NextResponse.json({ error: 'Invalid scenario.' }, { status: 400 })
     }
 
     const apiKey = process.env.GROQ_API_KEY
@@ -22,7 +27,7 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'user', content: prompts[scenarioId] }],
+        messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 600,
       }),
@@ -36,12 +41,9 @@ export async function POST(request) {
 
     const data = await res.json()
     const raw = data?.choices?.[0]?.message?.content ?? ''
-
     const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()
-
     const parsed = JSON.parse(cleaned)
     return NextResponse.json(parsed)
-
   } catch (err) {
     console.error('[Gemini route]', err)
     return NextResponse.json({ error: 'Failed to process scenario.' }, { status: 500 })

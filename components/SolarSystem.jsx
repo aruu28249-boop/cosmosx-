@@ -1,9 +1,10 @@
 'use client'
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { PLANETS } from '@/data/planets'
+import { getPlanetAngles } from '@/lib/orbital-mechanics'
 import Sun from './solar-system/Sun'
 import OrbitRing from './solar-system/OrbitRing'
 import Planet from './solar-system/Planet'
@@ -15,16 +16,20 @@ import ShootingStars from './solar-system/ShootingStars'
 import * as THREE from 'three'
 
 // ─── Module-level event bus ──────────────────────────────────────────────────
-let _effectCallback = null
-let _resetCallback  = null
+let _effectCallback      = null
+let _resetCallback       = null
+let _timeMachineCallback = null
 
 export function triggerEffect(name) {
   if (_effectCallback) _effectCallback(name)
 }
 
-// Single global reset — clears effects + camera + selection
 export function resetAll() {
   if (_resetCallback) _resetCallback()
+}
+
+export function setTimeMachineDate(date) {
+  if (_timeMachineCallback) _timeMachineCallback(date)
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -61,7 +66,10 @@ function MarsFlash({ flash }) {
   )
 }
 
-function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMarsFlash, selectedPlanet }) {
+function Scene({
+  activeEffect, setActiveEffect, multiplier, onPlanetClick,
+  setMarsFlash, selectedPlanet, surfacePlanet, initialAngles, timeMachineAngles,
+}) {
   const planetPositionsRef = useRef({})
   const marsPositionRef    = useRef({ x: 42, y: 0, z: 0 })
   const [controlsLocked, setControlsLocked] = useState(false)
@@ -69,7 +77,6 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
   const orbitRef = useRef()
   const { camera } = useThree()
 
-  // Register camera reset into the module-level slot
   useEffect(() => {
     const doReset = () => {
       if (orbitRef.current) {
@@ -79,10 +86,34 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
       camera.position.copy(DEFAULT_CAM_POS)
       camera.lookAt(DEFAULT_CAM_TARGET)
     }
-    // Expose camera reset so resetAll() (called from ScenarioSimulator) can reach it
-    ;(window).__cosmosCameraReset = doReset
+    window.__cosmosCameraReset = doReset
     return () => { delete window.__cosmosCameraReset }
   }, [camera])
+
+  // Surface explorer camera animation
+  useFrame(() => {
+    if (!surfacePlanet) return
+    const pos = planetPositionsRef.current[surfacePlanet]
+    if (!pos) return
+    const pd = PLANETS.find(p => p.name === surfacePlanet)
+    const size = pd?.size ?? 2
+    const dist = size * 3.2
+
+    // Position camera above-and-behind the planet (away from Sun)
+    const dir = new THREE.Vector3(pos.x, 0, pos.z).normalize()
+    const camTarget = new THREE.Vector3(
+      pos.x + dir.x * dist * 0.6,
+      dist * 0.9,
+      pos.z + dir.z * dist * 0.6,
+    )
+    const lookTarget = new THREE.Vector3(pos.x, 0, pos.z)
+
+    camera.position.lerp(camTarget, 0.05)
+    if (orbitRef.current) {
+      orbitRef.current.target.lerp(lookTarget, 0.05)
+      orbitRef.current.update()
+    }
+  })
 
   const handleAsteroidImpact = useCallback(() => {
     setMarsFlash(true)
@@ -94,11 +125,8 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
 
   return (
     <>
-      {/* Low ambient — space is dark but not completely black */}
       <ambientLight intensity={0.15} color="#1a2040" />
-      {/* Dense starfield with more saturation for Milky Way feel */}
       <Stars radius={300} depth={80} count={12000} factor={5} saturation={0.8} fade speed={0.4} />
-      {/* Shooting stars streaking across the background */}
       <ShootingStars />
       <OrbitControls
         ref={orbitRef}
@@ -149,7 +177,6 @@ function Scene({ activeEffect, setActiveEffect, multiplier, onPlanetClick, setMa
   )
 }
 
-// Hint badges — fade out after 7 s
 function InteractionHints() {
   const [visible, setVisible] = useState(true)
   useEffect(() => {
@@ -189,28 +216,57 @@ export default function SolarSystem() {
   const [multiplier,     setMultiplier]     = useState(1)
   const [activeEffect,   setActiveEffect]   = useState(null)
   const [marsFlash,      setMarsFlash]      = useState(false)
+  const [surfacePlanet,  setSurfacePlanet]  = useState(null)
+  const [timeMachineDate, setTimeMachineDateState] = useState(null)
+
+  // Today's real orbital angles (computed once on mount)
+  const initialAngles = useMemo(() => getPlanetAngles(new Date()), [])
+
+  // Angles for whatever date the time machine is set to
+  const timeMachineAngles = useMemo(
+    () => timeMachineDate ? getPlanetAngles(timeMachineDate) : null,
+    [timeMachineDate],
+  )
+
+  // Reset camera when exiting surface mode
+  const prevSurfaceRef = useRef(null)
+  useEffect(() => {
+    if (prevSurfaceRef.current !== null && surfacePlanet === null) {
+      if (typeof window !== 'undefined' && window.__cosmosCameraReset) {
+        window.__cosmosCameraReset()
+      }
+    }
+    prevSurfaceRef.current = surfacePlanet
+  }, [surfacePlanet])
 
   useEffect(() => {
-    _effectCallback = (name) => setActiveEffect(name)
-    _resetCallback  = () => {
+    _effectCallback      = (name) => setActiveEffect(name)
+    _timeMachineCallback = (date) => setTimeMachineDateState(date)
+    _resetCallback = () => {
       setActiveEffect(null)
       setSelectedPlanet(null)
-      // Camera reset is registered by Scene via window.__cosmosCameraReset
+      setSurfacePlanet(null)
+      setTimeMachineDateState(null)
       if (typeof window !== 'undefined' && window.__cosmosCameraReset) {
         window.__cosmosCameraReset()
       }
     }
     return () => {
-      _effectCallback = null
-      _resetCallback  = null
+      _effectCallback      = null
+      _timeMachineCallback = null
+      _resetCallback       = null
     }
   }, [])
+
+  const accentColors = { Earth: '#2979ff', Mars: '#ff3d00', Jupiter: '#ff9800' }
+  const surfaceAccent = surfacePlanet ? (accentColors[surfacePlanet] ?? '#aaaaff') : null
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <style>{`
-        @keyframes marsFlash { 0% { opacity:1; } 100% { opacity:0; } }
-        @keyframes sunPulse { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
+        @keyframes marsFlash  { 0% { opacity:1; } 100% { opacity:0; } }
+        @keyframes sunPulse   { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
+        @keyframes surfaceFadeIn { from { opacity:0; } to { opacity:1; } }
       `}</style>
 
       <Canvas
@@ -224,12 +280,14 @@ export default function SolarSystem() {
           onPlanetClick={setSelectedPlanet}
           setMarsFlash={setMarsFlash}
           selectedPlanet={selectedPlanet}
+          surfacePlanet={surfacePlanet}
+          initialAngles={initialAngles}
+          timeMachineAngles={timeMachineAngles}
         />
       </Canvas>
 
       <MarsFlash flash={marsFlash} />
 
-      {/* Sun brighter overlay */}
       {activeEffect === 'sun-brighter' && (
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
@@ -238,17 +296,59 @@ export default function SolarSystem() {
         }} />
       )}
 
+      {/* ── Surface Explorer Overlay ──────────────────────────────────────── */}
+      {surfacePlanet && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 15,
+          animation: 'surfaceFadeIn 0.6s ease',
+        }}>
+          {/* Atmospheric haze at bottom */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%',
+            background: `linear-gradient(to top, ${surfaceAccent}28 0%, transparent 100%)`,
+          }} />
+          {/* Label */}
+          <div style={{
+            position: 'absolute', top: '72px', left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: '9px', letterSpacing: '0.22em',
+            color: surfaceAccent, opacity: 0.75,
+            fontFamily: 'sans-serif',
+            textShadow: `0 0 12px ${surfaceAccent}88`,
+          }}>
+            IN ORBIT — {surfacePlanet.toUpperCase()}
+          </div>
+          {/* Exit button */}
+          <button
+            onClick={() => setSurfacePlanet(null)}
+            style={{
+              position: 'absolute', bottom: '100px', left: '50%',
+              transform: 'translateX(-50%)',
+              pointerEvents: 'auto',
+              padding: '8px 20px',
+              borderRadius: '20px',
+              border: `1px solid ${surfaceAccent}66`,
+              background: 'rgba(4,7,20,0.85)',
+              backdropFilter: 'blur(12px)',
+              color: surfaceAccent,
+              fontSize: '11px', letterSpacing: '0.12em',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            ← EXIT SURFACE VIEW
+          </button>
+        </div>
+      )}
+
       <InteractionHints />
 
       <InfoPanel
         planet={selectedPlanet}
         onClose={() => setSelectedPlanet(null)}
+        onExploreSurface={(name) => { setSelectedPlanet(null); setSurfacePlanet(name) }}
       />
-      <TimeControls
-        multiplier={multiplier}
-        setMultiplier={setMultiplier}
-      />
-      {/* ── NO reset button here — it lives in ScenarioSimulator ── */}
+      <TimeControls multiplier={multiplier} setMultiplier={setMultiplier} />
     </div>
   )
 }
