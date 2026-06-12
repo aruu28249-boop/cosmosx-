@@ -170,8 +170,8 @@ function TrailParticles({ trailRef }) {
 }
 
 // ─── Explosion particle system ────────────────────────────────────────────────
-const EXPLOSION_COUNT = 200
-const DEBRIS_COUNT = 40
+const EXPLOSION_COUNT = 100
+const DEBRIS_COUNT = 20
 
 function ExplosionParticles({ active, impactPos }) {
   const pointsRef  = useRef()
@@ -443,12 +443,12 @@ function ImpactFlash({ active, impactPos }) {
         />
       </mesh>
 
-      {/* Intense point light at impact */}
+      {/* Brief impact light */}
       {active && (
         <pointLight
           position={[impactPos.x, (impactPos.y || 0) + 1, impactPos.z]}
-          intensity={50}
-          distance={60}
+          intensity={25}
+          distance={45}
           decay={2}
           color="#ff8800"
         />
@@ -464,12 +464,11 @@ function CameraShake({ active }) {
   const timeRef    = useRef(0)
 
   useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.033)
+
     if (!active) {
       if (basePos.current) {
-        // Restore camera
-        camera.position.x = basePos.current.x
-        camera.position.y = basePos.current.y
-        camera.position.z = basePos.current.z
+        camera.position.copy(basePos.current)
         basePos.current = null
         timeRef.current = 0
       }
@@ -480,19 +479,19 @@ function CameraShake({ active }) {
       basePos.current = camera.position.clone()
     }
 
-    timeRef.current += delta
+    timeRef.current += dt
     const t = timeRef.current
-    const shakeDuration = 1.5
-    const intensity = Math.max(0, 1 - t / shakeDuration) * 2.0
+    const shakeDuration = 0.9
+    const falloff = Math.max(0, 1 - t / shakeDuration)
+    const intensity = falloff * falloff * 0.8
 
-    if (intensity > 0) {
-      camera.position.x = basePos.current.x + (Math.random() - 0.5) * intensity
-      camera.position.y = basePos.current.y + (Math.random() - 0.5) * intensity
-      camera.position.z = basePos.current.z + (Math.random() - 0.5) * intensity * 0.5
+    if (intensity > 0.01) {
+      // Smooth sine shake — avoids fighting OrbitControls with random jitter
+      camera.position.x = basePos.current.x + Math.sin(t * 38) * intensity
+      camera.position.y = basePos.current.y + Math.cos(t * 31) * intensity * 0.7
+      camera.position.z = basePos.current.z + Math.sin(t * 24) * intensity * 0.4
     } else {
-      camera.position.x = basePos.current.x
-      camera.position.y = basePos.current.y
-      camera.position.z = basePos.current.z
+      camera.position.copy(basePos.current)
     }
   })
 
@@ -506,10 +505,10 @@ function CameraShake({ active }) {
  * The asteroid body uses a custom shader for realistic rocky surface
  * with glowing lava-vein cracks and atmospheric re-entry heating.
  */
-const ASTEROID_SPEED  = 130
-const IMPACT_RADIUS   = 3.8
+const BASE_ASTEROID_SPEED = 160
+const IMPACT_RADIUS       = 3.8
 
-export default function Asteroid({ targetPosition, targetRef, onImpact }) {
+export default function Asteroid({ targetPosition, targetRef, timeMultiplier = 1, onImpact, onExplosionChange }) {
   const meshRef      = useRef()
   const glow1Ref     = useRef()
   const glow2Ref     = useRef()
@@ -572,6 +571,8 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
   }), [])
 
   useFrame(({ clock }, delta) => {
+    const dt = Math.min(delta, 0.033)
+
     // Update shader time
     if (asteroidMat.uniforms) {
       asteroidMat.uniforms.time.value = clock.elapsedTime
@@ -579,8 +580,8 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
 
     // ── Trail particles (while flying) ──
     if (trailRef.current && meshRef.current?.visible) {
-      trailTimer.current += delta
-      if (trailTimer.current > 0.015) {
+      trailTimer.current += dt
+      if (trailTimer.current > 0.03) {
         trailTimer.current = 0
         const posArr  = trailRef.current.geometry.attributes.position.array
         const colArr  = trailRef.current.geometry.attributes.color.array
@@ -639,18 +640,27 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
 
     // Track Mars velocity so we can lead the intercept, not chase its tail
     if (prevTargetRef.current) {
-      const invDt = 1 / Math.max(delta, 0.001)
+      const invDt = 1 / Math.max(dt, 0.001)
       velRef.current.x = (target.x - prevTargetRef.current.x) * invDt
       velRef.current.z = (target.z - prevTargetRef.current.z) * invDt
     }
     prevTargetRef.current = { x: target.x, z: target.z }
+
+    const marsSpeed = Math.hypot(velRef.current.x, velRef.current.z)
+    // Scale intercept speed to always outpace Mars at any timeMultiplier.
+    // marsSpeed already reflects the current multiplier so we must beat it
+    // by a comfortable margin plus a base that grows with the multiplier.
+    const asteroidSpeed = Math.max(
+      BASE_ASTEROID_SPEED + timeMultiplier * 18,
+      marsSpeed * 3.5 + BASE_ASTEROID_SPEED,
+    )
 
     const toMarsX = target.x - posRef.current.x
     const toMarsZ = target.z - posRef.current.z
     const marsDist = Math.hypot(toMarsX, toMarsZ)
 
     // Aim ahead of Mars based on time-to-reach
-    const leadTime = Math.min(Math.max(marsDist / ASTEROID_SPEED, 0.4), 3.5)
+    const leadTime = Math.min(Math.max(marsDist / asteroidSpeed, 0.35), 2.5)
     const aimX = target.x + velRef.current.x * leadTime
     const aimZ = target.z + velRef.current.z * leadTime
 
@@ -661,22 +671,22 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
 
     // Fixed-speed homing — fast enough to overtake an orbiting planet
     if (aimDist > 0.001) {
-      const step = ASTEROID_SPEED * delta
+      const step = asteroidSpeed * dt
       const ratio = Math.min(step / aimDist, 1)
       posRef.current.x += dx * ratio
       posRef.current.z += dz * ratio
     }
 
-    posRef.current.y += (target.y - posRef.current.y) * delta * 3.5
+    posRef.current.y += (target.y - posRef.current.y) * dt * 3.5
 
     const px = posRef.current.x
     const py = posRef.current.y
     const pz = posRef.current.z
 
     meshRef.current.position.set(px, py, pz)
-    meshRef.current.rotation.x += delta * 2.5
-    meshRef.current.rotation.y += delta * 1.8
-    meshRef.current.rotation.z += delta * 0.7
+    meshRef.current.rotation.x += dt * 2.5
+    meshRef.current.rotation.y += dt * 1.8
+    meshRef.current.rotation.z += dt * 0.7
 
     // Glow shells follow the asteroid
     const glowPulse = 1.0 + Math.sin(clock.elapsedTime * 6) * 0.1
@@ -726,6 +736,7 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
 
       setImpactPos({ x: px, y: 0, z: pz })
       setExploding(true)
+      onExplosionChange?.(true)
 
       setTimeout(() => {
         onImpact()
@@ -733,7 +744,8 @@ export default function Asteroid({ targetPosition, targetRef, onImpact }) {
 
       setTimeout(() => {
         setExploding(false)
-      }, 3000)
+        onExplosionChange?.(false)
+      }, 2500)
     }
   })
 
