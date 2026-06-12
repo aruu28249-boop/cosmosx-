@@ -113,7 +113,10 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
         speak(parts.join('. '))
       }
     } catch (err) {
-      setError('Could not reach AI. Visual effect is still active.')
+      const msg = err?.message && err.message !== 'Failed to fetch'
+        ? err.message
+        : 'Could not reach the AI service.'
+      setError(`${msg} The visual effect is still playing in the scene.`)
     } finally {
       setLoading(false)
     }

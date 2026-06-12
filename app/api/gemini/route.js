@@ -11,7 +11,13 @@ export async function POST(request) {
 
     const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ error: 'Groq API key not configured.' }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: 'AI is not configured yet. Add a GROQ_API_KEY to your .env.local file to enable scenario analysis.',
+          code: 'MISSING_API_KEY',
+        },
+        { status: 503 },
+      )
     }
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
