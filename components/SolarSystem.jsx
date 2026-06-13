@@ -176,6 +176,7 @@ function Scene({
           initialAngle={initialAngles?.[planet.name] ?? null}
           timeMachineAngle={timeMachineAngles?.[planet.name] ?? null}
           timeMachineFrozen={timeMachineFrozen}
+          isReturning={isReturning}
           onPositionUpdate={(pos) => { 
             planetPositionsRef.current[planet.name] = pos
             if (planet.name === 'Mars') {
