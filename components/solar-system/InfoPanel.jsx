@@ -1,3 +1,5 @@
+import { X, Sparkles, Hexagon } from 'lucide-react'
+
 export default function InfoPanel({ planet, onClose, onExploreSurface }) {
   if (!planet) return null
 
@@ -62,7 +64,7 @@ export default function InfoPanel({ planet, onClose, onExploreSurface }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          ✕
+          <X size={14} />
         </button>
       </div>
 
@@ -101,8 +103,8 @@ export default function InfoPanel({ planet, onClose, onExploreSurface }) {
           lineHeight: '1.65',
           color: 'rgba(255,255,255,0.8)',
         }}>
-          <div style={{ fontSize: '10px', letterSpacing: '0.12em', marginBottom: '6px', color: accent, opacity: 0.8 }}>
-            ✦ FUN FACT
+          <div style={{ fontSize: '10px', letterSpacing: '0.12em', marginBottom: '6px', color: accent, opacity: 0.8, display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Sparkles size={9} /> FUN FACT
           </div>
           {planet.funFact}
         </div>
@@ -126,7 +128,7 @@ export default function InfoPanel({ planet, onClose, onExploreSurface }) {
           onMouseEnter={e => { e.currentTarget.style.background = `${accent}30` }}
           onMouseLeave={e => { e.currentTarget.style.background = `${accent}18` }}
         >
-          ⬡ EXPLORE SURFACE
+          <Hexagon size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} /> EXPLORE SURFACE
         </button>
       </div>
     </div>

@@ -3,7 +3,7 @@ import SimulatorClient from '@/components/SimulatorClient'
 
 export const metadata = {
   title: 'CosmosX | Simulator',
-  description: 'Simulate cosmic events in real-time — Jupiter vanishing, asteroid impacts, Earth with two moons.',
+  description: 'Simulate cosmic events in real-time - Jupiter vanishing, asteroid impacts, Earth with two moons.',
 }
 
 export default function SimulatePage() {
@@ -36,21 +36,21 @@ export default function SimulatePage() {
             background: 'rgba(255,255,255,0.06)',
             border: '1px solid rgba(255,255,255,0.12)',
             backdropFilter: 'blur(12px)',
-            color: 'rgba(255,255,255,0.6)',
+            color: 'rgba(255,255,255,0.88)',
             fontSize: '12px',
             letterSpacing: '0.1em',
             textDecoration: 'none',
             transition: 'all 0.25s ease',
           }}
         >
-          ← HOME
+          ‹ HOME
         </Link>
 
         <div style={{
           fontFamily: 'var(--font-syne), serif',
           fontSize: '18px',
           letterSpacing: '0.3em',
-          color: 'rgba(255,255,255,0.75)',
+          color: 'rgba(255,255,255,0.95)',
           fontWeight: 600,
         }}>
           COSMOSX · SIMULATOR

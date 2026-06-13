@@ -4,7 +4,7 @@ export const missions = [
     year: 1957,
     name: "Sputnik Launch",
     description:
-      "Earth's first artificial satellite crosses the sky — a tiny metal sphere whose beep rewrote history and opened the space age.",
+      "Earth's first artificial satellite crosses the sky. A tiny metal sphere whose beep rewrote history and opened the space age.",
     badge: "Past",
     color: "#7B9FD4",
   },
@@ -13,7 +13,7 @@ export const missions = [
     year: 1969,
     name: "Apollo 11 Moon Landing",
     description:
-      "Neil Armstrong takes humanity's first steps on the lunar surface — a moment that forever changed our place in the cosmos.",
+      "Neil Armstrong takes humanity's first steps on the lunar surface, a moment that forever changed our place in the cosmos.",
     badge: "Past",
     color: "#C8A96E",
   },
@@ -31,7 +31,7 @@ export const missions = [
     year: 2023,
     name: "Chandrayaan-3",
     description:
-      "A soft landing near the Moon's south pole — the most challenging destination yet. India becomes the fourth nation to land on the Moon.",
+      "A soft landing near the Moon's south pole, the most challenging destination yet. India becomes the fourth nation to land on the Moon.",
     badge: "Past",
     color: "#A78BCC",
   },

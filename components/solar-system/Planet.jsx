@@ -368,86 +368,9 @@ const PLANET_VISUALS = {
       }
     `,
   },
-
-  Uranus: {
-    shader: true,
-    atmosphereColor: new THREE.Color(0.6, 0.85, 0.95),
-    atmosphereOpacity: 0.12,
-    atmosphereScale: 1.08,
-    vert: /* glsl */`
-      varying vec2 vUv; varying vec3 vNormal;
-      void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
-        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
-    `,
-    frag: /* glsl */`
-      uniform float time;
-      varying vec2 vUv; varying vec3 vNormal;
-      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
-      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
-      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n(p);p*=2.;a*=.5;}return v;}
-      void main(){
-        float haze=fbm(vUv*3.+vec2(time*.001,0.))*.3;
-        vec3 pale=vec3(.75,.88,.95), mid=vec3(.62,.82,.92);
-        vec3 deep=vec3(.48,.72,.88);
-        float lat=abs(vUv.y-.5)*2.;
-        vec3 surface=mix(deep,mid,smoothstep(0.,.4,lat));
-        surface=mix(surface,pale,smoothstep(.4,.7,lat));
-        surface=mix(surface,mid,smoothstep(.7,1.,lat));
-        surface+=haze*vec3(.05,.08,.1);
-        float rim=1.-max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface=mix(surface,vec3(.85,.95,1.0),pow(rim,5.)*.3);
-        float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface*=.55+.45*pow(mu,.35);
-        gl_FragColor=vec4(surface,1.);
-      }
-    `,
-  },
-
-  Neptune: {
-    shader: true,
-    atmosphereColor: new THREE.Color(0.3, 0.5, 0.9),
-    atmosphereOpacity: 0.10,
-    atmosphereScale: 1.06,
-    vert: /* glsl */`
-      varying vec2 vUv; varying vec3 vNormal;
-      void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
-        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
-    `,
-    frag: /* glsl */`
-      uniform float time;
-      varying vec2 vUv; varying vec3 vNormal;
-      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
-      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
-      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p*=2.1;a*=.5;}return v;}
-      void main(){
-        float storm=time*.003;
-        vec2 sUv=vUv*2.5+vec2(storm,storm*.6);
-        float clouds=fbm(sUv+vec2(.3,.7));
-        float stormMask=smoothstep(.52,.68,clouds);
-        vec2 spot=vec2(.35,.45);
-        float sD=length((vUv-spot)*vec2(4.,6.));
-        float darkSpot=1.-smoothstep(.08,.15,sD);
-        vec3 deep=vec3(.18,.32,.72), mid=vec3(.28,.48,.88);
-        vec3 bright=vec3(.42,.62,.95), stormCol=vec3(.22,.42,.82);
-        float lat=abs(vUv.y-.5)*2.;
-        vec3 surface=mix(deep,mid,smoothstep(0.,.5,lat));
-        surface=mix(surface,bright,smoothstep(.5,1.,lat));
-        surface=mix(surface,stormCol,stormMask*.35);
-        surface*=1.-darkSpot*.25;
-        float rim=1.-max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface=mix(surface,vec3(.55,.75,1.0),pow(rim,4.)*.3);
-        float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface*=.55+.45*pow(mu,.35);
-        gl_FragColor=vec4(surface,1.);
-      }
-    `,
-  },
 }
 
 export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
-  const meshRef        = useRef()
   const atmoRef        = useRef()
   const initializedRef = useRef(false)
 
@@ -581,6 +504,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
   useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.033)
+    const t  = clock.elapsedTime
 
     if (!initializedRef.current && data.orbitRadius > 0) {
       angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
@@ -600,20 +524,48 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
       angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, 0.08)
     }
 
-    const x = Math.cos(angleRef.current) * data.orbitRadius
-    const z = Math.sin(angleRef.current) * data.orbitRadius
-    meshRef.current.position.set(x, 0, z)
-    // Planet rotation (spin on axis) also continues normally!
-    meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier
+    // ── Scenario speed modifier ───────────────────────────────────────────
+    let scenarioMult = 1
+    if (activeEffect === 'sun-brighter') {
+      scenarioMult = 1.5
+    }
+    if (activeEffect === 'jupiter-disappear' && data.name !== 'Jupiter') {
+      scenarioMult = 1 + Math.sin(t * 0.6 + data.orbitRadius) * 0.25
+    }
+
+    angleRef.current += data.orbitSpeed * dt * timeMultiplier * scenarioMult * 0.3
+
+    let orbitR = data.orbitRadius
+    let y = 0
+
+    // ── Per-scenario orbital perturbations ────────────────────────────────
+    if (activeEffect === 'jupiter-disappear' && data.name !== 'Jupiter') {
+      // Orbits destabilise — slight elliptical stretch + inclination wobble
+      orbitR *= 1 + Math.sin(t * 0.25 + data.orbitRadius) * 0.04
+      y = Math.sin(t * 0.45 + data.orbitRadius * 0.8) * 1.2
+    }
+    if (activeEffect === 'asteroid-hit-mars' && data.name === 'Mars') {
+      // Impact knocks Mars into a slightly tilted orbit
+      y = Math.sin(t * 1.6) * 1.8
+    }
+    if (activeEffect === 'two-moons' && data.name === 'Earth') {
+      // Extra tidal forces from second moon cause slight orbital wobble
+      y = Math.sin(t * 0.9) * 0.4
+    }
+    if (activeEffect === 'sun-brighter') {
+      // Increased radiation pressure subtly perturbs smaller planets
+      y = Math.sin(t * 0.5 + data.orbitRadius * 0.3) * (data.size < 2 ? 0.5 : 0.15)
+    }
+
+    const x = Math.cos(angleRef.current) * orbitR
+    const z = Math.sin(angleRef.current) * orbitR
+    meshRef.current.position.set(x, y, z)
+    meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier * scenarioMult
 
     if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
-    if (ringRef.current) ringRef.current.position.set(x, 0, z)
 
     if (meshRef.current?.material?.uniforms?.time) {
-      meshRef.current.material.uniforms.time.value = clock.elapsedTime
-    }
-    if (ringRef.current?.material?.uniforms?.time) {
-      ringRef.current.material.uniforms.time.value = clock.elapsedTime
+      meshRef.current.material.uniforms.time.value = t
     }
     if (onPositionUpdate) onPositionUpdate({ x, y: 0, z })
 

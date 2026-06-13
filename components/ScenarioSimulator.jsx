@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { triggerEffect, resetAll, setTimeMachineDate } from '@/components/SolarSystem'
+import { RotateCcw, RefreshCw, Sparkles, Flame, Link2, Volume2, Square, Check, X, ChevronRight, Diamond, Layers, Globe } from 'lucide-react'
 
 const SCENARIOS = [
   { id: 'two-moons',        label: 'Two Moons',        question: 'What if Earth had two moons?',        color: '#a78bfa', glow: 'rgba(167,139,250,0.3)' },
@@ -123,10 +124,11 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       onScenarioSelect?.(scenarioId ?? 'custom')
       if (data.explanation) {
         const parts = [data.explanation]
-        if (data.impact && data.impact.length)         parts.push(data.impact.join('. '))
-        if (data.timeline && data.timeline.oneYear)      parts.push('In the first year: '       + data.timeline.oneYear)
-        if (data.timeline && data.timeline.tenYears)     parts.push('Over ten years: '          + data.timeline.tenYears)
-        if (data.timeline && data.timeline.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
+        if (data.impact?.length)                         parts.push(data.impact.join('. '))
+        if (data.timeline?.oneYear)                      parts.push('In the first year: '     + data.timeline.oneYear)
+        if (data.timeline?.tenYears)                     parts.push('Over ten years: '        + data.timeline.tenYears)
+        if (data.timeline?.hundredYears)                 parts.push('After a hundred years: ' + data.timeline.hundredYears)
+        if (data.howItCouldHappen?.length)               parts.push('How this could happen: ' + data.howItCouldHappen.join('. '))
         speak(parts.join('. '))
       }
 } catch (err) {
@@ -173,7 +175,7 @@ const handleCustomSubmit = async () => {
   const handleShare = () => {
     if (!result) return
     const lines = []
-    lines.push(`🚀 CosmosX AI Scenario: ${result.label ?? 'Custom'}`)
+    lines.push(`CosmosX AI Scenario: ${result.label ?? 'Custom'}`)
     lines.push('')
     lines.push(result.explanation)
     if (result.impact?.length) {
@@ -190,7 +192,7 @@ const handleCustomSubmit = async () => {
       if (tl.hundredYears) lines.push(`100 Years: ${tl.hundredYears}`)
     }
     lines.push('')
-    lines.push(`✨ Explore at: ${window.location.origin}`)
+    lines.push(`Explore at: ${window.location.origin}`)
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -280,11 +282,11 @@ const handleCustomSubmit = async () => {
     const isCorrect = quizSelected === quizData.correct
     const letters = ['A', 'B', 'C', 'D']
     const lines = []
-    lines.push('🪐 CosmosX Daily Space Quiz')
+    lines.push('CosmosX Daily Space Quiz')
     lines.push('')
     lines.push(`Q: ${quizData.question}`)
     lines.push('')
-    lines.push(`My answer: ${letters[quizSelected]}. ${quizData.options[quizSelected]} ${isCorrect ? '✓' : '✗'}`)
+    lines.push(`My answer: ${letters[quizSelected]}. ${quizData.options[quizSelected]} ${isCorrect ? '(Correct)' : '(Wrong)'}`)
     if (!isCorrect) {
       lines.push(`Correct answer: ${letters[quizData.correct]}. ${quizData.options[quizData.correct]}`)
     }
@@ -292,7 +294,7 @@ const handleCustomSubmit = async () => {
     lines.push(quizData.explanation)
     if (quizData.fact) {
       lines.push('')
-      lines.push(`✦ ${quizData.fact}`)
+      lines.push(quizData.fact)
     }
     lines.push('')
     lines.push(`Play at: ${window.location.origin}`)
@@ -311,142 +313,135 @@ const handleCustomSubmit = async () => {
 
       {/* ── Left Panel ──────────────────────────────────────────────────── */}
       <div style={{
-        position: 'absolute', left: '20px', top: '20px', bottom: '80px',
-        display: 'flex', flexDirection: 'column', gap: '8px',
-        pointerEvents: 'auto', width: '220px',
-        overflowY: 'auto', scrollbarWidth: 'none',
+        position: 'absolute', left: '20px', top: '72px',
+        display: 'flex', flexDirection: 'column', gap: '10px',
+        pointerEvents: 'auto', width: '256px',
       }}>
+        <div style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#ffffff', paddingLeft: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <Sparkles size={9} /> AI SCENARIO SIMULATOR
+        </div>
 
-        <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', paddingLeft: '2px' }}>
-          ✦ AI SCENARIO SIMULATOR
+        {/* Ask anything */}
+        <div style={{ display: 'flex', gap: '7px' }}>
+          <input
+            value={customQ}
+            onChange={e => setCustomQ(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleCustomSubmit() }}
+            placeholder="What if…"
+            style={{
+              flex: 1, padding: '10px 14px', borderRadius: '12px',
+              border: activeId === 'custom' ? '1.5px solid #60a5fa66' : '1.5px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)',
+              color: 'rgba(255,255,255,0.82)', fontSize: '13px',
+              outline: 'none', fontFamily: 'sans-serif',
+            }}
+          />
+          <button onClick={handleCustomSubmit} disabled={!customQ.trim() || customSending} style={{
+            padding: '10px 14px', borderRadius: '12px',
+            border: '1.5px solid rgba(96,165,250,0.4)',
+            background: customQ.trim() && !customSending ? 'rgba(96,165,250,0.18)' : 'rgba(255,255,255,0.04)',
+            color: customQ.trim() && !customSending ? '#93c5fd' : 'rgba(255,255,255,0.55)',
+            fontSize: '15px', cursor: customQ.trim() && !customSending ? 'pointer' : 'default',
+            transition: 'all 0.2s ease',
+          }}>
+            {customSending ? '…' : '›'}
+          </button>
         </div>
 
         {SCENARIOS.map(s => {
           const isActive = s.id === activeId
           return (
             <button key={s.id} onClick={() => handleScenario(s)} style={{
-              padding: '11px 14px', borderRadius: '12px',
+              padding: '13px 16px', borderRadius: '14px',
               border: isActive ? `1.5px solid ${s.color}99` : '1.5px solid rgba(255,255,255,0.1)',
               background: isActive ? `linear-gradient(135deg, ${s.color}20 0%, ${s.color}08 100%)` : 'rgba(255,255,255,0.04)',
               backdropFilter: 'blur(16px)',
-              color: isActive ? s.color : 'rgba(255,255,255,0.7)',
-              fontSize: '11px', letterSpacing: '0.05em', fontWeight: isActive ? '600' : '400',
+              color: isActive ? s.color : 'rgba(255,255,255,0.88)',
+              fontSize: '13px', letterSpacing: '0.05em', fontWeight: isActive ? '600' : '400',
               cursor: 'pointer', transition: 'all 0.25s ease',
               boxShadow: isActive ? `0 0 20px ${s.glow}` : 'none',
               textAlign: 'left', width: '100%',
             }}>
-              <div style={{ fontWeight: 600, marginBottom: '2px' }}>{s.label}</div>
-              <div style={{ fontSize: '10px', opacity: 0.6, fontWeight: 400 }}>{s.question}</div>
+              <div style={{ fontWeight: 600, marginBottom: '3px' }}>{s.label}</div>
+              <div style={{ fontSize: '11px', opacity: 0.78, fontWeight: 400 }}>{s.question}</div>
             </button>
           )
         })}
 
         <button onClick={handleReset} title="Reset" style={{
-          alignSelf: 'flex-start', width: '36px', height: '36px', borderRadius: '50%',
+          alignSelf: 'flex-start', width: '42px', height: '42px', borderRadius: '50%',
           border: activeId ? '1.5px solid rgba(239,68,68,0.5)' : '1.5px solid rgba(255,255,255,0.1)',
           background: activeId ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
           backdropFilter: 'blur(12px)',
-          color: activeId ? '#fca5a5' : 'rgba(255,255,255,0.3)',
-          fontSize: '16px', cursor: 'pointer', transition: 'all 0.3s ease',
+          color: activeId ? '#fca5a5' : 'rgba(255,255,255,0.6)',
+          cursor: 'pointer', transition: 'all 0.3s ease',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>↺</button>
+        }}><RotateCcw size={18} /></button>
+      </div>
 
-        {HR}
-
-        {/* ── Ask Anything ──────────────────────────────────────────── */}
-        <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', paddingLeft: '2px' }}>
-          ✦ ASK ANYTHING
-        </div>
-
-        <textarea
-          value={customQ}
-          onChange={e => setCustomQ(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleCustomSubmit() } }}
-          placeholder={'What if the Moon disappeared?\n(Enter to submit)'}
-          rows={3}
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            padding: '9px 12px', borderRadius: '10px',
-            border: activeId === 'custom' ? '1.5px solid #60a5fa66' : '1.5px solid rgba(255,255,255,0.1)',
-            background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)',
-            color: 'rgba(255,255,255,0.82)', fontSize: '11px',
-            lineHeight: 1.5, resize: 'none', outline: 'none', fontFamily: 'sans-serif',
-          }}
-        />
-        <button onClick={handleCustomSubmit} disabled={!customQ.trim() || customSending} style={{
-          padding: '9px', borderRadius: '10px',
-          border: '1.5px solid rgba(96,165,250,0.4)',
-          background: customQ.trim() && !customSending ? 'rgba(96,165,250,0.18)' : 'rgba(255,255,255,0.04)',
-          color: customQ.trim() && !customSending ? '#93c5fd' : 'rgba(255,255,255,0.3)',
-          fontSize: '11px', letterSpacing: '0.1em',
-          cursor: customQ.trim() && !customSending ? 'pointer' : 'default',
-          transition: 'all 0.2s ease', width: '100%',
+      {/* ── Time Machine popup ───────────────────────────────────────── */}
+      {tmOpen && (
+        <div style={{
+          position: 'absolute', bottom: '150px', left: '50%',
+          transform: 'translateX(-50%)', pointerEvents: 'auto', width: '380px',
+          padding: '20px 22px', borderRadius: '16px',
+          border: '1.5px solid rgba(52,211,153,0.25)',
+          background: 'rgba(4,8,22,0.92)', backdropFilter: 'blur(20px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          display: 'flex', flexDirection: 'column', gap: '12px',
         }}>
-          {customSending ? 'Analysing…' : '→ SIMULATE'}
-        </button>
-
-        {HR}
-
-        {/* ── Time Machine ──────────────────────────────────────────── */}
-        <button onClick={() => setTmOpen(o => !o)} style={{
-          padding: '9px 12px', borderRadius: '10px',
-          border: tmActive ? '1.5px solid rgba(52,211,153,0.5)' : '1.5px solid rgba(255,255,255,0.1)',
-          background: tmActive ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.04)',
-          backdropFilter: 'blur(12px)',
-          color: tmActive ? '#6ee7b7' : 'rgba(255,255,255,0.55)',
-          fontSize: '11px', letterSpacing: '0.08em', cursor: 'pointer', transition: 'all 0.25s ease',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          width: '100%', textAlign: 'left',
-        }}>
-          <span>⟳ TIME MACHINE{tmActive ? ` · ${tmYear}` : ''}</span>
-          <span style={{ opacity: 0.5, fontSize: '10px' }}>{tmOpen ? '▲' : '▼'}</span>
-        </button>
-
-        {tmOpen && (
-          <div style={{
-            padding: '12px', borderRadius: '10px',
-            border: '1.5px solid rgba(52,211,153,0.2)', background: 'rgba(52,211,153,0.06)',
-            backdropFilter: 'blur(12px)', display: 'flex', flexDirection: 'column', gap: '8px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(52,211,153,0.7)' }}>YEAR</span>
-              <span style={{ fontSize: '16px', fontWeight: 700, color: '#6ee7b7' }}>{tmYear}</span>
-            </div>
-            <input type="range" min={1900} max={2200} value={tmYear}
-              onChange={e => handleTimeMachineChange(Number(e.target.value))}
-              style={{ width: '100%', accentColor: '#34d399', cursor: 'pointer' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'rgba(255,255,255,0.25)' }}>
-              <span>1900</span>
-              <span style={{ color: tmActive ? 'transparent' : 'rgba(52,211,153,0.5)' }}>▲ today</span>
-              <span>2200</span>
-            </div>
-            {tmActive && (
-              <button onClick={() => handleTimeMachineChange(currentYear)} style={{
-                padding: '5px', borderRadius: '6px',
-                border: '1px solid rgba(52,211,153,0.3)', background: 'transparent',
-                color: 'rgba(52,211,153,0.7)', fontSize: '10px', cursor: 'pointer', letterSpacing: '0.08em',
-              }}>← Back to Today</button>
-            )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(52,211,153,0.6)', display: 'flex', alignItems: 'center', gap: '5px' }}><RefreshCw size={12} /> TIME MACHINE</span>
+            <span style={{ fontSize: '24px', fontWeight: 700, color: '#6ee7b7' }}>{tmYear}</span>
           </div>
-        )}
+          <input type="range" min={1900} max={2200} value={tmYear}
+            onChange={e => handleTimeMachineChange(Number(e.target.value))}
+            style={{ width: '100%', accentColor: '#34d399', cursor: 'pointer' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255,255,255,0.22)' }}>
+            <span>1900</span>
+            <span style={{ color: tmActive ? 'transparent' : 'rgba(52,211,153,0.45)' }}>today</span>
+            <span>2200</span>
+          </div>
+          {tmActive && (
+            <button onClick={() => handleTimeMachineChange(currentYear)} style={{
+              padding: '7px', borderRadius: '8px',
+              border: '1px solid rgba(52,211,153,0.3)', background: 'transparent',
+              color: 'rgba(52,211,153,0.7)', fontSize: '12px', cursor: 'pointer', letterSpacing: '0.08em',
+            }}>‹ Back to Today</button>
+          )}
+        </div>
+      )}
 
-        {HR}
-
-        {/* ── Daily Quiz trigger ────────────────────────────────────── */}
-        <button onClick={openQuiz} style={{
-          padding: '9px 12px', borderRadius: '10px',
-          border: '1.5px solid rgba(250,204,21,0.3)',
-          background: 'rgba(250,204,21,0.07)', backdropFilter: 'blur(12px)',
-          color: 'rgba(250,204,21,0.8)', fontSize: '11px', letterSpacing: '0.08em',
-          cursor: 'pointer', transition: 'all 0.25s ease',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          width: '100%', textAlign: 'left',
+      {/* ── Bottom bar: TIME + QUIZ ──────────────────────────────────── */}
+      <div style={{
+        position: 'absolute', bottom: '80px', left: '50%',
+        transform: 'translateX(-50%)', pointerEvents: 'auto',
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '8px 14px', borderRadius: '40px',
+        background: 'rgba(5,8,22,0.75)', backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      }}>
+        <button onClick={() => setTmOpen(o => !o)} style={{
+          padding: '9px 18px', borderRadius: '22px',
+          border: tmActive ? '1.5px solid rgba(52,211,153,0.5)' : '1px solid rgba(255,255,255,0.1)',
+          background: tmActive ? 'rgba(52,211,153,0.12)' : tmOpen ? 'rgba(255,255,255,0.06)' : 'transparent',
+          color: tmActive ? '#6ee7b7' : 'rgba(255,255,255,0.82)',
+          fontSize: '13px', letterSpacing: '0.06em', cursor: 'pointer', transition: 'all 0.2s ease',
         }}>
-          <span>✦ DAILY SPACE QUIZ</span>
-          {streak > 0 && <span style={{ fontSize: '10px', color: 'rgba(250,204,21,0.6)' }}>{streak}🔥</span>}
+          <><RefreshCw size={13} />{tmActive ? ` ${tmYear}` : ' TIME'}</>
         </button>
-
+        <button onClick={openQuiz} style={{
+          padding: '9px 18px', borderRadius: '22px',
+          border: '1.5px solid rgba(250,204,21,0.3)',
+          background: 'rgba(250,204,21,0.07)',
+          color: 'rgba(250,204,21,1)',
+          fontSize: '13px', letterSpacing: '0.06em', cursor: 'pointer', transition: 'all 0.2s ease',
+          display: 'flex', alignItems: 'center', gap: '6px',
+        }}>
+          <Sparkles size={13} /> QUIZ{streak > 0 ? <>{` ${streak}`}<Flame size={13} /></> : ''}
+        </button>
       </div>
 
       {/* ── Result Panel ────────────────────────────────────────────────── */}
@@ -462,34 +457,29 @@ const handleCustomSubmit = async () => {
         }}>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: active?.color ?? 'rgba(255,255,255,0.4)' }}>
-              ✦ AI ANALYSIS
+            <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: active?.color ?? 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Sparkles size={9} /> AI ANALYSIS
             </div>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              {/* Share button */}
               {(activeId || customQ.trim()) && (
                 <button onClick={handleShare} style={{
-                  background: 'none', border: `1px solid rgba(255,255,255,0.15)`,
+                  background: 'none', border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: '6px', padding: '3px 8px', cursor: 'pointer',
-                  color: copied ? '#6ee7b7' : 'rgba(255,255,255,0.35)',
+                  color: copied ? '#6ee7b7' : 'rgba(255,255,255,0.7)',
                   fontSize: '10px', letterSpacing: '0.08em', transition: 'all 0.2s',
                 }}>
-                  {copied ? '✓ copied' : '🔗 share'}
+                  {copied ? <><Check size={11} /> copied</> : <><Link2 size={11} /> share</>}
                 </button>
               )}
-              {/* Speak button */}
               {result && (
-                <button onClick={() => {
-                  if (speaking) { stopSpeaking(); return }
-                  speak(result.explanation)
-                }}
+                <button onClick={() => { if (speaking) { stopSpeaking(); return } speak(result.explanation) }}
                 style={{
                   background: 'none', border: `1px solid ${active?.color ?? 'rgba(255,255,255,0.2)'}55`,
                   borderRadius: '6px', padding: '3px 8px', cursor: 'pointer',
-                  color: speaking ? active?.color : 'rgba(255,255,255,0.4)',
+                  color: speaking ? active?.color : 'rgba(255,255,255,0.7)',
                   fontSize: '10px', letterSpacing: '0.08em', transition: 'all 0.2s',
                 }}>
-                  {speaking ? '⏹ stop' : '🔊 speak'}
+                  {speaking ? <><Square size={11} /> stop</> : <><Volume2 size={11} /> speak</>}
                 </button>
               )}
             </div>
@@ -502,7 +492,7 @@ const handleCustomSubmit = async () => {
           )}
 
           {loading && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.8)', fontSize: '12px' }}>
               <div style={{
                 width: '16px', height: '16px', flexShrink: 0,
                 border: `2px solid ${active?.color ?? '#fff'}33`, borderTopColor: active?.color ?? '#fff',
@@ -522,11 +512,11 @@ const handleCustomSubmit = async () => {
               <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '12px', lineHeight: 1.7 }}>{result.explanation}</p>
               {result.impact?.length > 0 && (
                 <div>
-                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '7px' }}>IMPACT ANALYSIS</div>
+                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.65)', marginBottom: '7px' }}>IMPACT ANALYSIS</div>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     {result.impact.map((pt, i) => (
-                      <li key={i} style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
-                        <span style={{ color: active?.color, flexShrink: 0, marginTop: '1px' }}>▸</span>{pt}
+                      <li key={i} style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
+                        <span style={{ color: active?.color, flexShrink: 0, display: 'flex', alignItems: 'center' }}><ChevronRight size={12} /></span>{pt}
                       </li>
                     ))}
                   </ul>
@@ -534,7 +524,7 @@ const handleCustomSubmit = async () => {
               )}
               {result.timeline && (
                 <div>
-                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>FUTURE TIMELINE</div>
+                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.65)', marginBottom: '8px' }}>FUTURE TIMELINE</div>
                   {[
                     { label: '1 YEAR',    value: result.timeline.oneYear },
                     { label: '10 YEARS',  value: result.timeline.tenYears },
@@ -542,9 +532,29 @@ const handleCustomSubmit = async () => {
                   ].map(({ label, value }) => value && (
                     <div key={label} style={{ marginBottom: '8px', paddingLeft: '10px', borderLeft: `2px solid ${active?.color}55` }}>
                       <div style={{ fontSize: '9px', color: active?.color, letterSpacing: '0.12em', marginBottom: '3px' }}>{label}</div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{value}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{value}</div>
                     </div>
                   ))}
+                </div>
+              )}
+              {result.howItCouldHappen?.length > 0 && (
+                <div style={{ marginTop: '4px' }}>
+                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.65)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Layers size={9} /> HOW IT COULD HAPPEN
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {result.howItCouldHappen.map((item, i) => (
+                      <div key={i} style={{
+                        padding: '8px 12px', borderRadius: '8px',
+                        background: `${active?.color ?? '#ffffff'}0a`,
+                        border: `1px solid ${active?.color ?? '#ffffff'}22`,
+                        fontSize: '11px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.55,
+                      }}>
+                        <span style={{ color: active?.color, marginRight: '6px', display: 'inline-flex', alignItems: 'center' }}><Diamond size={9} /></span>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -574,21 +584,21 @@ const handleCustomSubmit = async () => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
               <div>
-                <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: 'rgba(250,204,21,0.6)', marginBottom: '4px' }}>
-                  ✦ DAILY SPACE QUIZ
+                <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: 'rgba(250,204,21,0.6)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Sparkles size={9} /> DAILY SPACE QUIZ
                 </div>
                 {streak > 0 && (
                   <div style={{ fontSize: '12px', color: 'rgba(250,204,21,0.75)', letterSpacing: '0.04em' }}>
-                    {streak} day streak 🔥
+                    {streak} day streak <Flame size={13} />
                   </div>
                 )}
               </div>
               <button onClick={() => setQuizOpen(false)} style={{
                 background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '8px', color: 'rgba(255,255,255,0.5)',
-                width: '30px', height: '30px', cursor: 'pointer', fontSize: '13px',
+                width: '30px', height: '30px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>✕</button>
+              }}><X size={13} /></button>
             </div>
 
             {quizLoading && (
@@ -615,7 +625,7 @@ const handleCustomSubmit = async () => {
                     fontSize: '11px', color: 'rgba(250,204,21,0.65)',
                     marginBottom: '16px', lineHeight: 1.6,
                   }}>
-                    🪐 Right now — Earth→Mars: <strong>{quizData.earthMarsAU} AU</strong> · light takes <strong>{quizData.earthMarsMin} min</strong>
+                    <Globe size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Right now, Earth to Mars: <strong>{quizData.earthMarsAU} AU</strong> · light takes <strong>{quizData.earthMarsMin} min</strong>
                     {quizData.earthJupiterMin && (
                       <span> · Earth→Jupiter: <strong>{quizData.earthJupiterMin} min</strong></span>
                     )}
@@ -657,12 +667,12 @@ const handleCustomSubmit = async () => {
                       fontSize: '12px', lineHeight: 1.65,
                     }}>
                       <div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: correct ? '#6ee7b7' : '#fca5a5' }}>
-                        {correct ? '✓ Correct!' : `✗ The answer was ${['A','B','C','D'][quizData.correct]}.`}
+                        {correct ? <><Check size={13} /> Correct!</> : <>The answer was {['A','B','C','D'][quizData.correct]}.</>}
                       </div>
                       <div style={{ color: 'rgba(255,255,255,0.7)' }}>{quizData.explanation}</div>
                       {quizData.fact && (
                         <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
-                          ✦ {quizData.fact}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Sparkles size={10} /> {quizData.fact}</span>
                         </div>
                       )}
                       {/* ── Quiz Share button ── */}
@@ -678,7 +688,7 @@ const handleCustomSubmit = async () => {
                           display: 'flex', alignItems: 'center', gap: '5px',
                         }}
                       >
-                        {quizCopied ? '✓ Copied!' : '🔗 Share Result'}
+                        {quizCopied ? <><Check size={10} /> Copied!</> : <><Link2 size={10} /> Share Result</>}
                       </button>
                     </div>
                   )}

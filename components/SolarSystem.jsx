@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { Mouse, Search, Globe, RefreshCw } from 'lucide-react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
@@ -145,6 +146,7 @@ function Scene({
           timeMultiplier={multiplier}
           onPlanetClick={onPlanetClick}
           activeEffect={activeEffect}
+          initialAngle={initialAngles?.[planet.name] ?? null}
           timeMachineAngle={timeMachineAngles?.[planet.name] ?? null}
           timeMachineFrozen={timeMachineFrozen}
           onPositionUpdate={(pos) => { 
@@ -180,35 +182,51 @@ function Scene({
 }
 
 function InteractionHints() {
-  const [visible, setVisible] = useState(true)
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(false), 7000)
-    return () => clearTimeout(t)
-  }, [])
+  const [open, setOpen] = useState(false)
   return (
-    <div style={{
-      position: 'absolute', bottom: '80px', right: '20px',
-      zIndex: 20, display: 'flex', flexDirection: 'column', gap: '7px',
-      opacity: visible ? 1 : 0, transition: 'opacity 1.2s ease',
-      pointerEvents: 'none',
-    }}>
-      {[
-        { icon: '🖱️', text: 'Drag to rotate' },
-        { icon: '🔍', text: 'Scroll to zoom' },
-        { icon: '🪐', text: 'Click planet for info' },
-      ].map(h => (
-        <div key={h.text} style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '5px 13px', borderRadius: '20px',
-          background: 'rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          color: 'rgba(255,255,255,0.65)', fontSize: '11px',
-          fontFamily: 'sans-serif', letterSpacing: '0.05em', whiteSpace: 'nowrap',
-        }}>
-          <span style={{ fontSize: '13px' }}>{h.icon}</span>{h.text}
-        </div>
-      ))}
+    <div style={{ position: 'absolute', bottom: '80px', right: '20px', zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+      {/* Hint pills */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: '7px',
+        opacity: open ? 1 : 0, transform: open ? 'translateY(0)' : 'translateY(8px)',
+        transition: 'opacity 0.25s ease, transform 0.25s ease',
+        pointerEvents: open ? 'auto' : 'none',
+      }}>
+        {[
+          { icon: <Mouse size={13} />, text: 'Drag to rotate' },
+          { icon: <Search size={13} />, text: 'Scroll to zoom' },
+          { icon: <Globe size={13} />, text: 'Click planet for info' },
+        ].map(h => (
+          <div key={h.text} style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '5px 13px', borderRadius: '20px',
+            background: 'rgba(255,255,255,0.06)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.9)', fontSize: '11px',
+            fontFamily: 'sans-serif', letterSpacing: '0.05em', whiteSpace: 'nowrap',
+          }}>
+            {h.icon}{h.text}
+          </div>
+        ))}
+      </div>
+
+      {/* i button */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '38px', height: '38px', borderRadius: '50%',
+          border: '1px solid rgba(255,255,255,0.15)',
+          background: 'rgba(5,8,22,0.75)',
+          backdropFilter: 'blur(16px)',
+          color: 'rgba(255,255,255,0.85)',
+          fontSize: '16px', fontStyle: 'italic', fontFamily: 'serif',
+          cursor: 'pointer', transition: 'all 0.2s ease',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        i
+      </button>
     </div>
   )
 }
@@ -220,7 +238,6 @@ export default function SolarSystem() {
   const [marsFlash,      setMarsFlash]      = useState(false)
   const [surfacePlanet,  setSurfacePlanet]  = useState(null)
   const [timeMachineDate, setTimeMachineDateState] = useState(null)
-  const [currentTime, setCurrentTime] = useState(new Date())
 
   const initialAngles = useMemo(() => getPlanetAngles(new Date()), [])
   const timeMachineAngles = useMemo(
@@ -344,7 +361,8 @@ export default function SolarSystem() {
           <div style={{
             fontSize: '9px', letterSpacing: '0.22em',
             color: 'rgba(52,211,153,0.7)', fontFamily: 'sans-serif',
-          }}>⟳ TIME MACHINE</div>
+            display: 'flex', alignItems: 'center', gap: '4px',
+          }}><RefreshCw size={10} /> TIME MACHINE</div>
           <div style={{
             fontSize: '32px', fontWeight: 700, letterSpacing: '0.12em',
             color: '#6ee7b7', fontFamily: 'sans-serif',
@@ -381,7 +399,7 @@ export default function SolarSystem() {
             fontFamily: 'sans-serif',
             textShadow: `0 0 12px ${surfaceAccent}88`,
           }}>
-            IN ORBIT — {surfacePlanet.toUpperCase()}
+            IN ORBIT: {surfacePlanet.toUpperCase()}
           </div>
           {/* Exit button */}
           <button
