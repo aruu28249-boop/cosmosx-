@@ -257,13 +257,6 @@ export default function SolarSystem() {
     prevSurfaceRef.current = surfacePlanet
   }, [surfacePlanet])
 
-  // Update current time every second
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
 
   useEffect(() => {
     _effectCallback      = (name) => setActiveEffect(name)
@@ -299,7 +292,7 @@ export default function SolarSystem() {
     return `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`
   }
 
-  const displayDate = timeMachineDate || currentTime
+  const displayDate = timeMachineDate || new Date()
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
