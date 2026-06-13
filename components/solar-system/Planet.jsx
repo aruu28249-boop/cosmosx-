@@ -223,6 +223,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   const angleRef       = useRef(0)
   const moonAngleRef   = useRef(0)
   const moon2AngleRef  = useRef(Math.PI)
+  const realAngleRef   = useRef(0)
   const opacityRef     = useRef(1)
   const initializedRef = useRef(false)
 
@@ -265,17 +266,22 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.033)
 
-    // ── Time Machine: snap to the computed angle and freeze live orbit ──
-    if (timeMachineFrozen && timeMachineAngle != null) {
-      angleRef.current = timeMachineAngle
-    } else {
-      // Initialize random angle once (only when not in TM mode)
-      if (!initializedRef.current && data.orbitRadius > 0) {
-        angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
-        initializedRef.current = true
+    if (!initializedRef.current && data.orbitRadius > 0) {
+      angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
+      realAngleRef.current = angleRef.current
+      initializedRef.current = true
+    }
+
+    if (initializedRef.current) {
+      // Background real angle always advances
+      realAngleRef.current += data.orbitSpeed * dt * timeMultiplier * 0.3
+      
+      // Time Machine: smooth spin to computed historical angle, or spin back to present
+      if (timeMachineFrozen && timeMachineAngle != null) {
+        angleRef.current = THREE.MathUtils.lerp(angleRef.current, timeMachineAngle, 0.08)
+      } else {
+        angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, 0.08)
       }
-      // Orbit — cap dt so extreme speeds don't cause visible jumps
-      angleRef.current += data.orbitSpeed * dt * timeMultiplier * 0.3
     }
 
     const x = Math.cos(angleRef.current) * data.orbitRadius
