@@ -502,15 +502,31 @@ const handleCustomSubmit = async () => {
 
       {/* ── Result Panel ────────────────────────────────────────────────── */}
       {(loading || result || error) && (
-        <div style={{
-          position: 'absolute', right: '24px', top: '80px', bottom: '80px', width: '300px',
-          pointerEvents: 'auto', background: 'rgba(4,7,20,0.92)', backdropFilter: 'blur(20px)',
-          border: `1px solid ${active?.color ?? 'rgba(255,255,255,0.12)'}44`,
-          borderRadius: '16px', padding: '20px',
-          boxShadow: `0 0 40px ${active?.glow ?? 'transparent'}`,
-          overflowY: 'auto', scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(255,255,255,0.1) transparent',
-        }}>
+        <>
+          {/* Backdrop — click anywhere to dismiss */}
+          <div
+            onClick={() => {
+              setResult(null)
+              setError(null)
+              setLoading(false)
+              setActiveId(null)
+              stopSpeaking()
+            }}
+            style={{
+              position: 'fixed', inset: 0,
+              pointerEvents: 'auto',
+              cursor: 'default',
+            }}
+          />
+          <div style={{
+            position: 'absolute', right: '24px', top: '80px', bottom: '80px', width: '300px',
+            pointerEvents: 'auto', background: 'rgba(4,7,20,0.92)', backdropFilter: 'blur(20px)',
+            border: `1px solid ${active?.color ?? 'rgba(255,255,255,0.12)'}44`,
+            borderRadius: '16px', padding: '20px',
+            boxShadow: `0 0 40px ${active?.glow ?? 'transparent'}`,
+            overflowY: 'auto', scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,255,255,0.1) transparent',
+          }}>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: active?.color ?? 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -616,7 +632,8 @@ const handleCustomSubmit = async () => {
             </div>
           )}
         </div>
-      )}
+      </>
+    )}
 
       {/* ── Quiz Modal ───────────────────────────────────────────────────── */}
       {quizOpen && (
