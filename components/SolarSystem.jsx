@@ -217,7 +217,6 @@ export default function SolarSystem() {
   const [activeEffect,   setActiveEffect]   = useState(null)
   const [marsFlash,      setMarsFlash]      = useState(false)
   const [surfacePlanet,  setSurfacePlanet]  = useState(null)
-  const [timeMachineDate, setTimeMachineDateState] = useState(null)
 
   // Reset camera when exiting surface mode
   const prevSurfaceRef = useRef(null)
