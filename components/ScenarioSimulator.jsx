@@ -132,7 +132,7 @@ const parts = [data.explanation]
         speak(parts.join('. '))
       }
     } catch (err) {
-      setError('Could not reach AI. Visual effect is still active.')
+      setError(err.message || 'Could not reach AI. Visual effect is still active.')
     } finally {
       setLoading(false)
     }

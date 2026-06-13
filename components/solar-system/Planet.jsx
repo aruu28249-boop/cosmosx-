@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -263,31 +263,47 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     blending: THREE.AdditiveBlending, opacity: 0.75,
   }), [moonGlowTex])
 
+  const backgroundAngleRef = useRef(0)
+  const lastTmAngleRef = useRef(null)
+
+  useEffect(() => {
+    if (timeMachineAngle != null) {
+      // User scrubbed the time machine: snap the simulation base to this historical date
+      realAngleRef.current = timeMachineAngle
+      lastTmAngleRef.current = timeMachineAngle
+    } else if (lastTmAngleRef.current != null) {
+      // User clicked 'Back to Today': snap the simulation base back to the live background date
+      realAngleRef.current = backgroundAngleRef.current
+      lastTmAngleRef.current = null
+    }
+  }, [timeMachineAngle])
+
   useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.033)
 
     if (!initializedRef.current && data.orbitRadius > 0) {
       angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
       realAngleRef.current = angleRef.current
+      backgroundAngleRef.current = angleRef.current
       initializedRef.current = true
     }
 
     if (initializedRef.current) {
-      // Background real angle always advances
-      realAngleRef.current += data.orbitSpeed * dt * timeMultiplier * 0.3
+      const advance = data.orbitSpeed * dt * timeMultiplier * 0.3
+      // The background 'live' time always ticks forward
+      backgroundAngleRef.current += advance
+      // The actual simulation time also ticks forward, even if we are in the past/future
+      realAngleRef.current += advance
       
-      // Time Machine: smooth spin to computed historical angle, or spin back to present
-      if (timeMachineFrozen && timeMachineAngle != null) {
-        angleRef.current = THREE.MathUtils.lerp(angleRef.current, timeMachineAngle, 0.08)
-      } else {
-        angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, 0.08)
-      }
+      // Visually spin towards the active simulation time (creates the rapid scrub effect)
+      angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, 0.08)
     }
 
     const x = Math.cos(angleRef.current) * data.orbitRadius
     const z = Math.sin(angleRef.current) * data.orbitRadius
     meshRef.current.position.set(x, 0, z)
-    meshRef.current.rotation.y += data.rotationSpeed * dt * (timeMachineFrozen ? 0 : timeMultiplier)
+    // Planet rotation (spin on axis) also continues normally!
+    meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier
 
     if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
 
