@@ -750,7 +750,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
       {/* Saturn's rings */}
       {data.name === 'Saturn' && ringMat && (
-        <mesh ref={ringRef} rotation={[0, 0, 0]}>
+        <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[data.size * 1.4, data.size * 2.3, 64]} />
           <primitive object={ringMat} attach="material" />
         </mesh>
