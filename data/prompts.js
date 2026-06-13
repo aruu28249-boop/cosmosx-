@@ -68,7 +68,7 @@ Respond in this exact JSON format:
     "tenYears": "What changes over 10 years",
     "hundredYears": "What Mars looks like after 100 years"
   },
-  "howItCouldHappen": ["A Ceres-class asteroid perturbed from the main belt by Jupiter resonance could reach Mars-crossing orbit within thousands of years", "A long-period comet from the Oort Cloud with an unfortunate trajectory — statistically possible on geological timescales", "Jupiter's gravity occasionally ejects large objects from the asteroid belt onto planet-crossing trajectories"]
+  "howItCouldHappen": ["A Ceres-class asteroid perturbed from the main belt by Jupiter resonance could reach Mars-crossing orbit within thousands of years", "A long-period comet from the Oort Cloud with an unfortunate trajectory, statistically possible on geological timescales", "Jupiter's gravity occasionally ejects large objects from the asteroid belt onto planet-crossing trajectories"]
 }
 
 Be scientific but readable. Focus on ejecta, atmospheric changes, seismic activity, and implications for future Mars missions.`,
@@ -84,7 +84,7 @@ Respond in this exact JSON format:
     "tenYears": "What changes over 10 years",
     "hundredYears": "What Earth and the solar system look like after 100 years"
   },
-  "howItCouldHappen": ["The Sun naturally brightens ~1% every 100 million years — a sudden jump could occur if core fusion rate spiked due to unknown instability", "A large stellar flare or series of superflares could temporarily boost luminosity by this margin", "Theoretical: injection of exotic matter into the solar core could accelerate the proton-proton chain reaction"]
+  "howItCouldHappen": ["The Sun naturally brightens ~1% every 100 million years. A sudden jump could occur if the core fusion rate spiked due to unknown instability", "A large stellar flare or series of superflares could temporarily boost luminosity by this margin", "Theoretical: injection of exotic matter into the solar core could accelerate the proton-proton chain reaction"]
 }
 
 Be scientific but readable. Focus on solar radiation, Earth's temperature, ocean evaporation, and habitability.`,

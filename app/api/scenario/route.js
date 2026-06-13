@@ -30,20 +30,20 @@ Explain in 2-3 vivid, accurate sentences what would scientifically happen. Be co
       const errText = await groqRes.text()
       console.error('[Groq] HTTP', groqRes.status, errText)
       return NextResponse.json({
-        explanation: `⚠️ AI service error (${groqRes.status}). The visual effect is still running above.`
+        explanation: `AI service error (${groqRes.status}). The visual effect is still running above.`
       })
     }
 
     const data = await groqRes.json()
     const explanation = data?.choices?.[0]?.message?.content?.trim()
-      ?? 'The cosmos stirs — no words can capture what just unfolded.'
+      ?? 'The cosmos stirs. No words can capture what just unfolded.'
 
     return NextResponse.json({ explanation })
 
   } catch (err) {
     console.error('[Scenario API]', err)
     return NextResponse.json({
-      explanation: '⚠️ Could not reach the AI service. Watch the visual effect playing above!'
+      explanation: 'Could not reach the AI service. Watch the visual effect playing above!'
     })
   }
 }

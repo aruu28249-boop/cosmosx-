@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { Mouse, Search, Globe, RefreshCw } from 'lucide-react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
@@ -192,9 +193,9 @@ function InteractionHints() {
         pointerEvents: open ? 'auto' : 'none',
       }}>
         {[
-          { icon: '🖱️', text: 'Drag to rotate' },
-          { icon: '🔍', text: 'Scroll to zoom' },
-          { icon: '🪐', text: 'Click planet for info' },
+          { icon: <Mouse size={13} />, text: 'Drag to rotate' },
+          { icon: <Search size={13} />, text: 'Scroll to zoom' },
+          { icon: <Globe size={13} />, text: 'Click planet for info' },
         ].map(h => (
           <div key={h.text} style={{
             display: 'flex', alignItems: 'center', gap: '8px',
@@ -205,7 +206,7 @@ function InteractionHints() {
             color: 'rgba(255,255,255,0.9)', fontSize: '11px',
             fontFamily: 'sans-serif', letterSpacing: '0.05em', whiteSpace: 'nowrap',
           }}>
-            <span style={{ fontSize: '13px' }}>{h.icon}</span>{h.text}
+            {h.icon}{h.text}
           </div>
         ))}
       </div>
@@ -315,7 +316,8 @@ export default function SolarSystem() {
           <div style={{
             fontSize: '9px', letterSpacing: '0.22em',
             color: 'rgba(52,211,153,0.7)', fontFamily: 'sans-serif',
-          }}>⟳ TIME MACHINE</div>
+            display: 'flex', alignItems: 'center', gap: '4px',
+          }}><RefreshCw size={10} /> TIME MACHINE</div>
           <div style={{
             fontSize: '32px', fontWeight: 700, letterSpacing: '0.12em',
             color: '#6ee7b7', fontFamily: 'sans-serif',
@@ -352,7 +354,7 @@ export default function SolarSystem() {
             fontFamily: 'sans-serif',
             textShadow: `0 0 12px ${surfaceAccent}88`,
           }}>
-            IN ORBIT — {surfacePlanet.toUpperCase()}
+            IN ORBIT: {surfacePlanet.toUpperCase()}
           </div>
           {/* Exit button */}
           <button

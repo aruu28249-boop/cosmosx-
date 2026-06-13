@@ -3,7 +3,7 @@ import SimulatorClient from '@/components/SimulatorClient'
 
 export const metadata = {
   title: 'CosmosX | Simulator',
-  description: 'Simulate cosmic events in real-time — Jupiter vanishing, asteroid impacts, Earth with two moons.',
+  description: 'Simulate cosmic events in real-time - Jupiter vanishing, asteroid impacts, Earth with two moons.',
 }
 
 export default function SimulatePage() {
