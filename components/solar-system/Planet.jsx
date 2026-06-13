@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -212,8 +212,7 @@ const PLANET_VISUALS = {
   },
 }
 
-export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate }) {
-  const meshRef        = useRef()
+export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {)
   const atmoRef        = useRef()
 
   const moonRef        = useRef()
@@ -223,6 +222,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   const angleRef       = useRef(0)
   const moonAngleRef   = useRef(0)
   const moon2AngleRef  = useRef(Math.PI)
+  const realAngleRef   = useRef(0)
   const opacityRef     = useRef(1)
   const visual = PLANET_VISUALS[data.name]
 
@@ -260,19 +260,46 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     blending: THREE.AdditiveBlending, opacity: 0.75,
   }), [moonGlowTex])
 
+  const backgroundAngleRef = useRef(0)
+  const lastTmAngleRef = useRef(null)
+
+  useEffect(() => {
+    if (timeMachineAngle != null) {
+      // User scrubbed the time machine: snap the simulation base to this historical date
+      realAngleRef.current = timeMachineAngle
+      lastTmAngleRef.current = timeMachineAngle
+    } else if (lastTmAngleRef.current != null) {
+      // User clicked 'Back to Today': snap the simulation base back to the live background date
+      realAngleRef.current = backgroundAngleRef.current
+      lastTmAngleRef.current = null
+    }
+  }, [timeMachineAngle])
+
   useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.033)
 
-    // Initialize random angle once
-    if (angleRef.current === 0 && data.orbitRadius > 0) {
-      angleRef.current = Math.random() * Math.PI * 2
+    if (!initializedRef.current && data.orbitRadius > 0) {
+      angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
+      realAngleRef.current = angleRef.current
+      backgroundAngleRef.current = angleRef.current
+      initializedRef.current = true
     }
 
-    // Orbit — cap dt so extreme speeds don't cause visible jumps
-    angleRef.current += data.orbitSpeed * dt * timeMultiplier * 0.3
+    if (initializedRef.current) {
+      const advance = data.orbitSpeed * dt * timeMultiplier * 0.3
+      // The background 'live' time always ticks forward
+      backgroundAngleRef.current += advance
+      // The actual simulation time also ticks forward, even if we are in the past/future
+      realAngleRef.current += advance
+      
+      // Visually spin towards the active simulation time (creates the rapid scrub effect)
+      angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, 0.08)
+    }
+
     const x = Math.cos(angleRef.current) * data.orbitRadius
     const z = Math.sin(angleRef.current) * data.orbitRadius
     meshRef.current.position.set(x, 0, z)
+    // Planet rotation (spin on axis) also continues normally!
     meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier
 
     if (atmoRef.current) atmoRef.current.position.set(x, 0, z)

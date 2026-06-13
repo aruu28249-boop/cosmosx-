@@ -68,7 +68,7 @@ function MarsFlash({ flash }) {
 
 function Scene({
   activeEffect, setActiveEffect, multiplier, onPlanetClick,
-  setMarsFlash, surfacePlanet,
+  setMarsFlash, selectedPlanet, surfacePlanet, initialAngles, timeMachineAngles, timeMachineFrozen,
 }) {
   const planetPositionsRef = useRef({})
   const marsPositionRef    = useRef({ x: 42, y: 0, z: 0 })
@@ -145,6 +145,8 @@ function Scene({
           timeMultiplier={multiplier}
           onPlanetClick={onPlanetClick}
           activeEffect={activeEffect}
+          timeMachineAngle={timeMachineAngles?.[planet.name] ?? null}
+          timeMachineFrozen={timeMachineFrozen}
           onPositionUpdate={(pos) => { 
             planetPositionsRef.current[planet.name] = pos
             if (planet.name === 'Mars') {
@@ -217,6 +219,13 @@ export default function SolarSystem() {
   const [activeEffect,   setActiveEffect]   = useState(null)
   const [marsFlash,      setMarsFlash]      = useState(false)
   const [surfacePlanet,  setSurfacePlanet]  = useState(null)
+  const [timeMachineDate, setTimeMachineDateState] = useState(null)
+
+  const initialAngles = useMemo(() => getPlanetAngles(new Date()), [])
+  const timeMachineAngles = useMemo(
+    () => (timeMachineDate ? getPlanetAngles(timeMachineDate) : null),
+    [timeMachineDate]
+  )
 
   // Reset camera when exiting surface mode
   const prevSurfaceRef = useRef(null)
@@ -269,11 +278,34 @@ export default function SolarSystem() {
           multiplier={multiplier}
           onPlanetClick={setSelectedPlanet}
           setMarsFlash={setMarsFlash}
+          selectedPlanet={selectedPlanet}
           surfacePlanet={surfacePlanet}
+          initialAngles={initialAngles}
+          timeMachineAngles={timeMachineAngles}
+          timeMachineFrozen={!!timeMachineDate}
         />
       </Canvas>
 
       <MarsFlash flash={marsFlash} />
+
+      {/* ── Time Machine year HUD ─────────────────────────────────────────── */}
+      {timeMachineDate && (
+        <div style={{
+          position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 25, pointerEvents: 'none',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+        }}>
+          <div style={{
+            fontSize: '9px', letterSpacing: '0.22em',
+            color: 'rgba(52,211,153,0.7)', fontFamily: 'sans-serif',
+          }}>⟳ TIME MACHINE</div>
+          <div style={{
+            fontSize: '32px', fontWeight: 700, letterSpacing: '0.12em',
+            color: '#6ee7b7', fontFamily: 'sans-serif',
+            textShadow: '0 0 24px rgba(52,211,153,0.6)',
+          }}>{timeMachineDate.getFullYear()}</div>
+        </div>
+      )}
 
       {activeEffect === 'sun-brighter' && (
         <div style={{
