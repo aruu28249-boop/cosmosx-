@@ -37,17 +37,18 @@ export function setTimeMachineDate(date) {
 const DEFAULT_CAM_POS    = new THREE.Vector3(0, 50, 110)
 const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 0)
 
-function PostEffects({ activeEffect }) {
+function PostEffects({ activeEffect, timeMachineFrozen }) {
   const isAsteroid = activeEffect === 'asteroid-hit-mars'
   return (
     <EffectComposer multisampling={isAsteroid ? 0 : 4}>
       <Bloom
         intensity={
-          activeEffect === 'sun-brighter' ? 2.2
+          timeMachineFrozen ? 2.5
+          : activeEffect === 'sun-brighter' ? 2.2
           : isAsteroid ? 0.7
           : 1.5
         }
-        luminanceThreshold={isAsteroid ? 0.7 : 0.55}
+        luminanceThreshold={isAsteroid ? 0.7 : (timeMachineFrozen ? 0.3 : 0.55)}
         luminanceSmoothing={0.25}
         mipmapBlur={!isAsteroid}
       />
@@ -127,7 +128,7 @@ function Scene({
   return (
     <>
       <ambientLight intensity={0.15} color="#1a2040" />
-      <Stars radius={300} depth={80} count={12000} factor={5} saturation={0.8} fade speed={0.4} />
+      <Stars radius={300} depth={80} count={12000} factor={5} saturation={0.8} fade speed={timeMachineFrozen ? 15.0 : 0.4} />
       <ShootingStars />
       <OrbitControls
         ref={orbitRef}
@@ -176,7 +177,7 @@ function Scene({
           onExplosionChange={setControlsLocked}
         />
       )}
-      <PostEffects activeEffect={activeEffect} />
+      <PostEffects activeEffect={activeEffect} timeMachineFrozen={timeMachineFrozen} />
     </>
   )
 }
