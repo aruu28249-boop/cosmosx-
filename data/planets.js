@@ -7,7 +7,7 @@ export const PLANETS = [
     orbitSpeed: 1.0,
     rotationSpeed: 0.5,
     distanceFromSun: "149.6 million km",
-    funFact: "The only known planet to harbour life — and the most beautiful blue marble in the cosmos."
+    funFact: "The only known planet to harbour life, and the most beautiful blue marble in the cosmos."
   },
   {
     name: "Mars",

@@ -22,7 +22,7 @@ const MISSIONS: Mission[] = [
     agency: "USSR",
     desc: "The first artificial Earth satellite.",
     detail:
-      "On 4 October 1957 the Soviet Union launched a 58 cm aluminium sphere into orbit. Its faint radio beep, heard by amateur operators worldwide, proved that humanity could place objects beyond the atmosphere — and triggered the Space Race overnight.",
+      "On 4 October 1957 the Soviet Union launched a 58 cm aluminium sphere into orbit. Its faint radio beep, heard by amateur operators worldwide, proved that humanity could place objects beyond the atmosphere and triggered the Space Race overnight.",
     facts: ["Orbited every 96 minutes", "Transmitted for 21 days", "Re-entered after 3 months"],
     align: "left",
   },
@@ -44,7 +44,7 @@ const MISSIONS: Mission[] = [
     agency: "NASA",
     desc: "Farthest human-made object.",
     detail:
-      "Launched to study the outer planets, Voyager 1 is now over 24 billion km away in interstellar space — the most distant human-made object ever. It still carries the Golden Record, a message of sounds and images from Earth for any civilisation that may find it.",
+      "Launched to study the outer planets, Voyager 1 is now over 24 billion km away in interstellar space, making it the most distant human-made object ever built. It still carries the Golden Record, a message of sounds and images from Earth for any civilisation that may find it.",
     facts: ["Interstellar since 2012", "Golden Record aboard", "Still transmitting"],
     align: "left",
   },
@@ -78,7 +78,7 @@ const MISSIONS: Mission[] = [
     desc: "Unveiling the early universe.",
     detail:
       "The most powerful space telescope ever built observes in infrared from a vantage point 1.5 million km from Earth. It can see the light of the very first galaxies, formed just a few hundred million years after the Big Bang.",
-    facts: ["6.5 m gold-coated mirror", "Sees infrared light", "Orbits Sun–Earth L2"],
+    facts: ["6.5 m gold-coated mirror", "Sees infrared light", "Orbits Sun-Earth L2"],
     align: "right",
   },
   {
@@ -88,7 +88,7 @@ const MISSIONS: Mission[] = [
     agency: "ISRO",
     desc: "First to land on the lunar south pole.",
     detail:
-      "India became the fourth nation to soft-land on the Moon and the very first to touch down near its south pole — a region of scientific interest for its water-ice deposits. The Pragyan rover then explored the surface and confirmed the presence of sulphur.",
+      "India became the fourth nation to soft-land on the Moon and the very first to touch down near its south pole, a region of scientific interest for its water-ice deposits. The Pragyan rover then explored the surface and confirmed the presence of sulphur.",
     facts: ["First at the south pole", "4th nation to soft-land", "Confirmed surface sulphur"],
     align: "left",
   },
@@ -108,7 +108,7 @@ function MissionNode({ mission }: { mission: Mission }) {
     >
       {/*
         3-column grid: [card area | spine | card area]
-        The spine column has 0 width — the node dot is positioned
+        The spine column has 0 width -the node dot is positioned
         absolutely on it so it never moves when the card resizes.
       */}
       <div className="grid grid-cols-[1fr_0px_1fr] items-start">

@@ -214,7 +214,6 @@ const PLANET_VISUALS = {
 
 export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
   const meshRef        = useRef()
-  const initializedRef = useRef(false)
   const atmoRef        = useRef()
 
   const moonRef        = useRef()

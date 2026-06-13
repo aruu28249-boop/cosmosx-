@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { triggerEffect, resetAll, setTimeMachineDate } from '@/components/SolarSystem'
+import { RotateCcw, RefreshCw, Sparkles, Flame, Link2, Volume2, Square, Check, X, ChevronRight, Diamond, Layers, Globe } from 'lucide-react'
 
 const SCENARIOS = [
   { id: 'two-moons',        label: 'Two Moons',        question: 'What if Earth had two moons?',        color: '#a78bfa', glow: 'rgba(167,139,250,0.3)' },
@@ -172,7 +173,7 @@ if (year === currentYear) {
   const handleShare = () => {
     if (!result) return
     const lines = []
-    lines.push(`🚀 CosmosX AI Scenario: ${result.label ?? 'Custom'}`)
+    lines.push(`CosmosX AI Scenario: ${result.label ?? 'Custom'}`)
     lines.push('')
     lines.push(result.explanation)
     if (result.impact?.length) {
@@ -189,7 +190,7 @@ if (year === currentYear) {
       if (tl.hundredYears) lines.push(`100 Years: ${tl.hundredYears}`)
     }
     lines.push('')
-    lines.push(`✨ Explore at: ${window.location.origin}`)
+    lines.push(`Explore at: ${window.location.origin}`)
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -247,11 +248,11 @@ if (year === currentYear) {
     const isCorrect = quizSelected === quizData.correct
     const letters = ['A', 'B', 'C', 'D']
     const lines = []
-    lines.push('🪐 CosmosX Daily Space Quiz')
+    lines.push('CosmosX Daily Space Quiz')
     lines.push('')
     lines.push(`Q: ${quizData.question}`)
     lines.push('')
-    lines.push(`My answer: ${letters[quizSelected]}. ${quizData.options[quizSelected]} ${isCorrect ? '✓' : '✗'}`)
+    lines.push(`My answer: ${letters[quizSelected]}. ${quizData.options[quizSelected]} ${isCorrect ? '(Correct)' : '(Wrong)'}`)
     if (!isCorrect) {
       lines.push(`Correct answer: ${letters[quizData.correct]}. ${quizData.options[quizData.correct]}`)
     }
@@ -259,7 +260,7 @@ if (year === currentYear) {
     lines.push(quizData.explanation)
     if (quizData.fact) {
       lines.push('')
-      lines.push(`✦ ${quizData.fact}`)
+      lines.push(quizData.fact)
     }
     lines.push('')
     lines.push(`Play at: ${window.location.origin}`)
@@ -282,8 +283,8 @@ if (year === currentYear) {
         display: 'flex', flexDirection: 'column', gap: '10px',
         pointerEvents: 'auto', width: '256px',
       }}>
-        <div style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#ffffff', paddingLeft: '2px' }}>
-          ✦ AI SCENARIO SIMULATOR
+        <div style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#ffffff', paddingLeft: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <Sparkles size={9} /> AI SCENARIO SIMULATOR
         </div>
 
         {/* Ask anything */}
@@ -339,9 +340,9 @@ if (year === currentYear) {
           background: activeId ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
           backdropFilter: 'blur(12px)',
           color: activeId ? '#fca5a5' : 'rgba(255,255,255,0.6)',
-          fontSize: '20px', cursor: 'pointer', transition: 'all 0.3s ease',
+          cursor: 'pointer', transition: 'all 0.3s ease',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>↺</button>
+        }}><RotateCcw size={18} /></button>
       </div>
 
       {/* ── Time Machine popup ───────────────────────────────────────── */}
@@ -356,7 +357,7 @@ if (year === currentYear) {
           display: 'flex', flexDirection: 'column', gap: '12px',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(52,211,153,0.6)' }}>⟳ TIME MACHINE</span>
+            <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(52,211,153,0.6)', display: 'flex', alignItems: 'center', gap: '5px' }}><RefreshCw size={12} /> TIME MACHINE</span>
             <span style={{ fontSize: '24px', fontWeight: 700, color: '#6ee7b7' }}>{tmYear}</span>
           </div>
           <input type="range" min={1900} max={2200} value={tmYear}
@@ -365,7 +366,7 @@ if (year === currentYear) {
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255,255,255,0.22)' }}>
             <span>1900</span>
-            <span style={{ color: tmActive ? 'transparent' : 'rgba(52,211,153,0.45)' }}>▲ today</span>
+            <span style={{ color: tmActive ? 'transparent' : 'rgba(52,211,153,0.45)' }}>today</span>
             <span>2200</span>
           </div>
           {tmActive && (
@@ -395,7 +396,7 @@ if (year === currentYear) {
           color: tmActive ? '#6ee7b7' : 'rgba(255,255,255,0.82)',
           fontSize: '13px', letterSpacing: '0.06em', cursor: 'pointer', transition: 'all 0.2s ease',
         }}>
-          ⟳{tmActive ? ` ${tmYear}` : ' TIME'}
+          <><RefreshCw size={13} />{tmActive ? ` ${tmYear}` : ' TIME'}</>
         </button>
         <button onClick={openQuiz} style={{
           padding: '9px 18px', borderRadius: '22px',
@@ -405,7 +406,7 @@ if (year === currentYear) {
           fontSize: '13px', letterSpacing: '0.06em', cursor: 'pointer', transition: 'all 0.2s ease',
           display: 'flex', alignItems: 'center', gap: '6px',
         }}>
-          ✦ QUIZ{streak > 0 ? ` ${streak}🔥` : ''}
+          <Sparkles size={13} /> QUIZ{streak > 0 ? <>{` ${streak}`}<Flame size={13} /></> : ''}
         </button>
       </div>
 
@@ -422,8 +423,8 @@ if (year === currentYear) {
         }}>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: active?.color ?? 'rgba(255,255,255,0.7)' }}>
-              ✦ AI ANALYSIS
+            <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: active?.color ?? 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Sparkles size={9} /> AI ANALYSIS
             </div>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               {(activeId || customQ.trim()) && (
@@ -433,7 +434,7 @@ if (year === currentYear) {
                   color: copied ? '#6ee7b7' : 'rgba(255,255,255,0.7)',
                   fontSize: '10px', letterSpacing: '0.08em', transition: 'all 0.2s',
                 }}>
-                  {copied ? '✓ copied' : '🔗 share'}
+                  {copied ? <><Check size={11} /> copied</> : <><Link2 size={11} /> share</>}
                 </button>
               )}
               {result && (
@@ -444,7 +445,7 @@ if (year === currentYear) {
                   color: speaking ? active?.color : 'rgba(255,255,255,0.7)',
                   fontSize: '10px', letterSpacing: '0.08em', transition: 'all 0.2s',
                 }}>
-                  {speaking ? '⏹ stop' : '🔊 speak'}
+                  {speaking ? <><Square size={11} /> stop</> : <><Volume2 size={11} /> speak</>}
                 </button>
               )}
             </div>
@@ -481,7 +482,7 @@ if (year === currentYear) {
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     {result.impact.map((pt, i) => (
                       <li key={i} style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
-                        <span style={{ color: active?.color, flexShrink: 0, marginTop: '1px' }}>▸</span>{pt}
+                        <span style={{ color: active?.color, flexShrink: 0, display: 'flex', alignItems: 'center' }}><ChevronRight size={12} /></span>{pt}
                       </li>
                     ))}
                   </ul>
@@ -504,8 +505,8 @@ if (year === currentYear) {
               )}
               {result.howItCouldHappen?.length > 0 && (
                 <div style={{ marginTop: '4px' }}>
-                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.65)', marginBottom: '8px' }}>
-                    ◈ HOW IT COULD HAPPEN
+                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.65)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Layers size={9} /> HOW IT COULD HAPPEN
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {result.howItCouldHappen.map((item, i) => (
@@ -515,7 +516,7 @@ if (year === currentYear) {
                         border: `1px solid ${active?.color ?? '#ffffff'}22`,
                         fontSize: '11px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.55,
                       }}>
-                        <span style={{ color: active?.color, marginRight: '6px', fontSize: '10px' }}>◆</span>
+                        <span style={{ color: active?.color, marginRight: '6px', display: 'inline-flex', alignItems: 'center' }}><Diamond size={9} /></span>
                         {item}
                       </div>
                     ))}
@@ -549,21 +550,21 @@ if (year === currentYear) {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
               <div>
-                <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: 'rgba(250,204,21,0.6)', marginBottom: '4px' }}>
-                  ✦ DAILY SPACE QUIZ
+                <div style={{ fontSize: '9px', letterSpacing: '0.2em', color: 'rgba(250,204,21,0.6)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Sparkles size={9} /> DAILY SPACE QUIZ
                 </div>
                 {streak > 0 && (
                   <div style={{ fontSize: '12px', color: 'rgba(250,204,21,0.75)', letterSpacing: '0.04em' }}>
-                    {streak} day streak 🔥
+                    {streak} day streak <Flame size={13} />
                   </div>
                 )}
               </div>
               <button onClick={() => setQuizOpen(false)} style={{
                 background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '8px', color: 'rgba(255,255,255,0.5)',
-                width: '30px', height: '30px', cursor: 'pointer', fontSize: '13px',
+                width: '30px', height: '30px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>✕</button>
+              }}><X size={13} /></button>
             </div>
 
             {quizLoading && (
@@ -590,7 +591,7 @@ if (year === currentYear) {
                     fontSize: '11px', color: 'rgba(250,204,21,0.65)',
                     marginBottom: '16px', lineHeight: 1.6,
                   }}>
-                    🪐 Right now — Earth→Mars: <strong>{quizData.earthMarsAU} AU</strong> · light takes <strong>{quizData.earthMarsMin} min</strong>
+                    <Globe size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Right now, Earth to Mars: <strong>{quizData.earthMarsAU} AU</strong> · light takes <strong>{quizData.earthMarsMin} min</strong>
                     {quizData.earthJupiterMin && (
                       <span> · Earth→Jupiter: <strong>{quizData.earthJupiterMin} min</strong></span>
                     )}
@@ -632,12 +633,12 @@ if (year === currentYear) {
                       fontSize: '12px', lineHeight: 1.65,
                     }}>
                       <div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '8px', color: correct ? '#6ee7b7' : '#fca5a5' }}>
-                        {correct ? '✓ Correct!' : `✗ The answer was ${['A','B','C','D'][quizData.correct]}.`}
+                        {correct ? <><Check size={13} /> Correct!</> : <>The answer was {['A','B','C','D'][quizData.correct]}.</>}
                       </div>
                       <div style={{ color: 'rgba(255,255,255,0.7)' }}>{quizData.explanation}</div>
                       {quizData.fact && (
                         <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
-                          ✦ {quizData.fact}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}><Sparkles size={10} /> {quizData.fact}</span>
                         </div>
                       )}
                       {/* ── Quiz Share button ── */}
@@ -653,7 +654,7 @@ if (year === currentYear) {
                           display: 'flex', alignItems: 'center', gap: '5px',
                         }}
                       >
-                        {quizCopied ? '✓ Copied!' : '🔗 Share Result'}
+                        {quizCopied ? <><Check size={10} /> Copied!</> : <><Link2 size={10} /> Share Result</>}
                       </button>
                     </div>
                   )}
