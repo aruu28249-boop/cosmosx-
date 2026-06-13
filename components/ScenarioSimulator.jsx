@@ -50,6 +50,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
 
   // ── Share ─────────────────────────────────────────────────────────────────
   const [copied, setCopied] = useState(false)
+  const [quizCopied, setQuizCopied] = useState(false)
 
   // ── Quiz ──────────────────────────────────────────────────────────────────
   const [quizOpen,    setQuizOpen]    = useState(false)
@@ -156,7 +157,8 @@ const parts = [data.explanation]
 
   const handleTimeMachineChange = (year) => {
     setTmYear(year)
-    setTimeMachineDate(year)
+    // Pass a proper Date (mid-year) so getPlanetAngles() gets valid milliseconds
+    setTimeMachineDate(new Date(year, 6, 1))
   }
 
 
@@ -168,15 +170,27 @@ const parts = [data.explanation]
   }
 
   const handleShare = () => {
-    const url = new URL(window.location.href)
-    url.search = ''
-    if (activeId && activeId !== 'custom') {
-      url.searchParams.set('s', activeId)
-    } else if (customQ.trim()) {
-      url.searchParams.set('q', encodeURIComponent(customQ.trim()))
+    if (!result) return
+    const lines = []
+    lines.push(`🚀 CosmosX AI Scenario: ${result.label ?? 'Custom'}`)
+    lines.push('')
+    lines.push(result.explanation)
+    if (result.impact?.length) {
+      lines.push('')
+      lines.push('Impact:')
+      result.impact.forEach(pt => lines.push(`• ${pt}`))
     }
-    if (tmYear !== currentYear) url.searchParams.set('year', tmYear)
-    navigator.clipboard.writeText(url.toString()).then(() => {
+    if (result.timeline) {
+      const tl = result.timeline
+      lines.push('')
+      lines.push('Timeline:')
+      if (tl.oneYear)      lines.push(`1 Year: ${tl.oneYear}`)
+      if (tl.tenYears)     lines.push(`10 Years: ${tl.tenYears}`)
+      if (tl.hundredYears) lines.push(`100 Years: ${tl.hundredYears}`)
+    }
+    lines.push('')
+    lines.push(`✨ Explore at: ${window.location.origin}`)
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -225,6 +239,33 @@ const parts = [data.explanation]
 
     saveQuizStore({ date: today, answered: true, selected: i, correct: isCorrect, streak: newStreak })
     setStreak(newStreak)
+  }
+
+  const handleQuizShare = () => {
+    if (!quizData || quizSelected === null) return
+    const isCorrect = quizSelected === quizData.correct
+    const letters = ['A', 'B', 'C', 'D']
+    const lines = []
+    lines.push('🪐 CosmosX Daily Space Quiz')
+    lines.push('')
+    lines.push(`Q: ${quizData.question}`)
+    lines.push('')
+    lines.push(`My answer: ${letters[quizSelected]}. ${quizData.options[quizSelected]} ${isCorrect ? '✓' : '✗'}`)
+    if (!isCorrect) {
+      lines.push(`Correct answer: ${letters[quizData.correct]}. ${quizData.options[quizData.correct]}`)
+    }
+    lines.push('')
+    lines.push(quizData.explanation)
+    if (quizData.fact) {
+      lines.push('')
+      lines.push(`✦ ${quizData.fact}`)
+    }
+    lines.push('')
+    lines.push(`Play at: ${window.location.origin}`)
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      setQuizCopied(true)
+      setTimeout(() => setQuizCopied(false), 2000)
+    })
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -562,7 +603,7 @@ const parts = [data.explanation]
                       return (
                         <button key={i} onClick={() => handleQuizAnswer(i)} disabled={answered} style={{
                           padding: '10px 14px', borderRadius: '10px',
-                          border, bg, color, fontSize: '12px',
+                          border, background: bg, color, fontSize: '12px',
                           textAlign: 'left', lineHeight: 1.4,
                           cursor: answered ? 'default' : 'pointer', transition: 'all 0.2s',
                           fontFamily: 'sans-serif',
@@ -590,6 +631,21 @@ const parts = [data.explanation]
                           ✦ {quizData.fact}
                         </div>
                       )}
+                      {/* ── Quiz Share button ── */}
+                      <button
+                        onClick={handleQuizShare}
+                        style={{
+                          marginTop: '12px', padding: '6px 14px',
+                          borderRadius: '8px', cursor: 'pointer',
+                          background: 'none',
+                          border: quizCopied ? '1px solid rgba(110,231,183,0.5)' : '1px solid rgba(255,255,255,0.15)',
+                          color: quizCopied ? '#6ee7b7' : 'rgba(255,255,255,0.45)',
+                          fontSize: '10px', letterSpacing: '0.08em', transition: 'all 0.2s',
+                          display: 'flex', alignItems: 'center', gap: '5px',
+                        }}
+                      >
+                        {quizCopied ? '✓ Copied!' : '🔗 Share Result'}
+                      </button>
                     </div>
                   )}
                 </>
