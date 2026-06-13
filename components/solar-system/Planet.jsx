@@ -447,7 +447,7 @@ const PLANET_VISUALS = {
   },
 }
 
-export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
+export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen, isReturning }) {
   const meshRef        = useRef()
   const atmoRef        = useRef()
   const labelRef       = useRef()
@@ -707,8 +707,8 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     <>
       {/* Planet sphere with Trail */}
       <Trail
-        width={data.size * 0.5}
-        length={250}
+        width={(timeMachineFrozen || isReturning) ? data.size * 1.4 : data.size * 0.5}
+        length={(timeMachineFrozen || isReturning) ? 320 : 250}
         color={visual?.atmosphereColor ?? data.color}
         attenuation={(t) => t * t}
       >
