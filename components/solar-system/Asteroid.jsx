@@ -1,5 +1,5 @@
 import { useRef, useMemo, useState, useEffect } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 // ─── Asteroid surface shader — displaced rocky body with glowing cracks ───────
@@ -459,16 +459,15 @@ function ImpactFlash({ active, impactPos }) {
 
 // ─── Camera shake ─────────────────────────────────────────────────────────────
 function CameraShake({ active }) {
-  const state = useThree()
   const basePos    = useRef(null)
   const timeRef    = useRef(0)
 
-  useFrame((_, delta) => {
+  useFrame(({ camera }, delta) => {
     const dt = Math.min(delta, 0.033)
 
     if (!active) {
       if (basePos.current) {
-        state.camera.position.set(basePos.current.x, basePos.current.y, basePos.current.z)
+        camera.position.set(basePos.current.x, basePos.current.y, basePos.current.z)
         basePos.current = null
         timeRef.current = 0
       }
@@ -476,7 +475,7 @@ function CameraShake({ active }) {
     }
 
     if (!basePos.current) {
-      basePos.current = state.camera.position.clone()
+      basePos.current = camera.position.clone()
     }
 
     timeRef.current += dt
@@ -486,13 +485,13 @@ function CameraShake({ active }) {
     const intensity = falloff * falloff * 0.8
 
     if (intensity > 0.01) {
-      state.camera.position.x = basePos.current.x + (Math.random() - 0.5) * intensity
-      state.camera.position.y = basePos.current.y + (Math.random() - 0.5) * intensity
-      state.camera.position.z = basePos.current.z + (Math.random() - 0.5) * intensity * 0.5
+      camera.position.x = basePos.current.x + (Math.random() - 0.5) * intensity
+      camera.position.y = basePos.current.y + (Math.random() - 0.5) * intensity
+      camera.position.z = basePos.current.z + (Math.random() - 0.5) * intensity * 0.5
     } else {
-      state.camera.position.x = basePos.current.x
-      state.camera.position.y = basePos.current.y
-      state.camera.position.z = basePos.current.z
+      camera.position.x = basePos.current.x
+      camera.position.y = basePos.current.y
+      camera.position.z = basePos.current.z
     }
   })
 
