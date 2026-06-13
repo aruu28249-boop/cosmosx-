@@ -212,7 +212,7 @@ const PLANET_VISUALS = {
   },
 }
 
-export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle }) {
+export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
   const meshRef        = useRef()
   const atmoRef        = useRef()
 
@@ -265,17 +265,23 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.033)
 
-    // Initialize random angle once
-    if (angleRef.current === 0 && data.orbitRadius > 0) {
-      angleRef.current = Math.random() * Math.PI * 2
+    // ── Time Machine: snap to the computed angle and freeze live orbit ──
+    if (timeMachineFrozen && timeMachineAngle != null) {
+      angleRef.current = timeMachineAngle
+    } else {
+      // Initialize random angle once (only when not in TM mode)
+      if (!initializedRef.current && data.orbitRadius > 0) {
+        angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
+        initializedRef.current = true
+      }
+      // Orbit — cap dt so extreme speeds don't cause visible jumps
+      angleRef.current += data.orbitSpeed * dt * timeMultiplier * 0.3
     }
 
-    // Orbit — cap dt so extreme speeds don't cause visible jumps
-    angleRef.current += data.orbitSpeed * dt * timeMultiplier * 0.3
     const x = Math.cos(angleRef.current) * data.orbitRadius
     const z = Math.sin(angleRef.current) * data.orbitRadius
     meshRef.current.position.set(x, 0, z)
-    meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier
+    meshRef.current.rotation.y += data.rotationSpeed * dt * (timeMachineFrozen ? 0 : timeMultiplier)
 
     if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
 
