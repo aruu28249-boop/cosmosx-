@@ -16,7 +16,7 @@ export default function Header() {
         {[
           { name: 'Home', href: '/' },
           { name: 'Timeline', href: '/#history' },
-          { name: 'Missions', href: '/missions' },
+          { name: 'News', href: '/missions' },
           { name: 'About', href: '#' }
         ].map((item) => (
           <Link 
