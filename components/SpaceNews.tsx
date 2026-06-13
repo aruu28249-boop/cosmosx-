@@ -111,11 +111,14 @@ export default function SpaceNews() {
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(false)
 
-  useEffect(() => {
+  const selectYear = (y: string) => {
+    setYear(y)
     setLoading(true)
     setError(false)
     setArticles([])
+  }
 
+  useEffect(() => {
     const url = year === 'Latest' ? '/api/news' : `/api/news?year=${year}`
 
     fetch(url)
@@ -156,7 +159,7 @@ export default function SpaceNews() {
           return (
             <button
               key={y}
-              onClick={() => setYear(y)}
+              onClick={() => selectYear(y)}
               style={{
                 padding: '6px 18px', borderRadius: '20px',
                 border: active ? '1px solid rgba(255,255,255,0.35)' : '1px solid rgba(255,255,255,0.1)',
