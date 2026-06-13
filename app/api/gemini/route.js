@@ -47,7 +47,11 @@ export async function POST(request) {
 
     const data = await res.json()
     const raw = data?.choices?.[0]?.message?.content ?? ''
-    const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()
+    
+    // Robust JSON extraction to prevent parsing errors if LLM adds text
+    const match = raw.match(/\{[\s\S]*\}/)
+    const cleaned = match ? match[0] : raw
+    
     const parsed = JSON.parse(cleaned)
     return NextResponse.json(parsed)
   } catch (err) {
