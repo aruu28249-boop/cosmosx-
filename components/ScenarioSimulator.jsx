@@ -123,10 +123,11 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       onScenarioSelect?.(scenarioId ?? 'custom')
       if (data.explanation) {
         const parts = [data.explanation]
-        if (data.impact && data.impact.length)         parts.push(data.impact.join('. '))
-        if (data.timeline && data.timeline.oneYear)      parts.push('In the first year: '       + data.timeline.oneYear)
-        if (data.timeline && data.timeline.tenYears)     parts.push('Over ten years: '          + data.timeline.tenYears)
-        if (data.timeline && data.timeline.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
+        if (data.impact?.length)                         parts.push(data.impact.join('. '))
+        if (data.timeline?.oneYear)                      parts.push('In the first year: '     + data.timeline.oneYear)
+        if (data.timeline?.tenYears)                     parts.push('Over ten years: '        + data.timeline.tenYears)
+        if (data.timeline?.hundredYears)                 parts.push('After a hundred years: ' + data.timeline.hundredYears)
+        if (data.howItCouldHappen?.length)               parts.push('How this could happen: ' + data.howItCouldHappen.join('. '))
         speak(parts.join('. '))
       }
 } catch (err) {
@@ -499,6 +500,26 @@ if (year === currentYear) {
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{value}</div>
                     </div>
                   ))}
+                </div>
+              )}
+              {result.howItCouldHappen?.length > 0 && (
+                <div style={{ marginTop: '4px' }}>
+                  <div style={{ fontSize: '9px', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.65)', marginBottom: '8px' }}>
+                    ◈ HOW IT COULD HAPPEN
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {result.howItCouldHappen.map((item, i) => (
+                      <div key={i} style={{
+                        padding: '8px 12px', borderRadius: '8px',
+                        background: `${active?.color ?? '#ffffff'}0a`,
+                        border: `1px solid ${active?.color ?? '#ffffff'}22`,
+                        fontSize: '11px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.55,
+                      }}>
+                        <span style={{ color: active?.color, marginRight: '6px', fontSize: '10px' }}>◆</span>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
