@@ -238,6 +238,7 @@ export default function SolarSystem() {
   const [marsFlash,      setMarsFlash]      = useState(false)
   const [surfacePlanet,  setSurfacePlanet]  = useState(null)
   const [timeMachineDate, setTimeMachineDateState] = useState(null)
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   const initialAngles = useMemo(() => getPlanetAngles(new Date()), [])
   const timeMachineAngles = useMemo(
