@@ -48,6 +48,9 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   const currentYear = new Date().getFullYear()
   const [tmOpen,  setTmOpen]  = useState(false)
   const [tmYear,  setTmYear]  = useState(currentYear)
+  const [tmEvent, setTmEvent] = useState(null)
+  const [tmLoading, setTmLoading] = useState(false)
+  const tmTimeoutRef = useRef(null)
 
   // ── Share ─────────────────────────────────────────────────────────────────
   const [copied, setCopied] = useState(false)
@@ -158,10 +161,33 @@ const handleCustomSubmit = async () => {
     setTmYear(year)
     if (year === currentYear) {
       setTimeMachineDate(null)
+      setTmEvent(null)
+      if (tmTimeoutRef.current) clearTimeout(tmTimeoutRef.current)
     } else {
       // Use current month, day, and time but with the selected year
       const now = new Date()
       setTimeMachineDate(new Date(year, now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds()))
+      
+      // Debounce the AI fetch
+      if (tmTimeoutRef.current) clearTimeout(tmTimeoutRef.current)
+      setTmLoading(true)
+      tmTimeoutRef.current = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/time-machine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ year }),
+          })
+          if (!res.ok) throw new Error('Failed to fetch event')
+          const data = await res.json()
+          setTmEvent(data.text)
+        } catch (err) {
+          console.error(err)
+          setTmEvent('Temporal archives unavailable for this era.')
+        } finally {
+          setTmLoading(false)
+        }
+      }, 800)
     }
   }
 
@@ -169,7 +195,8 @@ const handleCustomSubmit = async () => {
     stopSpeaking()
     resetAll()
     setActiveId(null); setResult(null); setError(null); setLoading(false)
-    setCustomQ(''); setTmOpen(false); setTmYear(currentYear)
+    setCustomQ(''); setTmOpen(false); setTmYear(currentYear); setTmEvent(null);
+    if (tmTimeoutRef.current) clearTimeout(tmTimeoutRef.current)
   }
 
   const handleShare = () => {
@@ -389,6 +416,7 @@ const handleCustomSubmit = async () => {
           background: 'rgba(4,8,22,0.92)', backdropFilter: 'blur(20px)',
           boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
           display: 'flex', flexDirection: 'column', gap: '12px',
+          transition: 'height 0.3s ease',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(52,211,153,0.6)', display: 'flex', alignItems: 'center', gap: '5px' }}><RefreshCw size={12} /> TIME MACHINE</span>
@@ -403,6 +431,34 @@ const handleCustomSubmit = async () => {
             <span style={{ color: tmActive ? 'transparent' : 'rgba(52,211,153,0.45)' }}>today</span>
             <span>2200</span>
           </div>
+
+          {/* Temporal Event HUD */}
+          {tmActive && (
+            <div style={{
+              marginTop: '8px', padding: '12px', borderRadius: '10px',
+              background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)',
+              minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {tmLoading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(52,211,153,0.6)', fontSize: '11px', letterSpacing: '0.1em' }}>
+                  <div style={{
+                    width: '12px', height: '12px', border: '1.5px solid rgba(52,211,153,0.3)',
+                    borderTopColor: '#34d399', borderRadius: '50%', animation: 'spin 0.8s linear infinite'
+                  }} />
+                  SYNCING TIMELINE...
+                </div>
+              ) : tmEvent ? (
+                <div style={{ 
+                  color: 'rgba(255,255,255,0.85)', fontSize: '12px', lineHeight: 1.5, 
+                  textShadow: '0 0 10px rgba(52,211,153,0.2)' 
+                }}>
+                  <div style={{ fontSize: '9px', color: '#34d399', letterSpacing: '0.15em', marginBottom: '4px' }}>TEMPORAL LOG:</div>
+                  {tmEvent}
+                </div>
+              ) : null}
+            </div>
+          )}
+
           {tmActive && (
             <button onClick={() => handleTimeMachineChange(currentYear)} style={{
               padding: '7px', borderRadius: '8px',
