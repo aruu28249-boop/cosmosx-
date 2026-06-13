@@ -246,13 +246,31 @@ export default function TimeControls({ multiplier, setMultiplier }) {
     clearRef.current = setTimeout(() => setActiveCtrl(null), wordCount * 110 + 6000)
   }
 
+  const dismissExplanation = () => {
+    if (clearRef.current) clearTimeout(clearRef.current)
+    setActiveCtrl(null)
+  }
+
   return (
     <>
       {activeCtrl && (
-        <FloatingWords
-          text={activeCtrl.text}
-          onLearnMore={() => { setModalCtrl(activeCtrl); setActiveCtrl(null) }}
-        />
+        <>
+          {/* Backdrop — click anywhere to dismiss */}
+          <div
+            onClick={dismissExplanation}
+            style={{
+              position: 'absolute', inset: 0,
+              zIndex: 24,
+              cursor: 'default',
+            }}
+          />
+          <div style={{ position: 'relative', zIndex: 25 }}>
+            <FloatingWords
+              text={activeCtrl.text}
+              onLearnMore={() => { setModalCtrl(activeCtrl); setActiveCtrl(null) }}
+            />
+          </div>
+        </>
       )}
       {modalCtrl && (
         <LearnMoreModal ctrl={modalCtrl} onClose={() => setModalCtrl(null)} />

@@ -389,17 +389,18 @@ const PLANET_VISUALS = {
       float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n(p);p*=2.;a*=.5;}return v;}
       void main(){
         float haze=fbm(vUv*3.+vec2(time*.001,0.))*.3;
-        vec3 pale=vec3(.85,.95,1.0), mid=vec3(.72,.88,.98);
-        vec3 deep=vec3(.58,.78,.92);
+        // Tone down colors so they don't exceed the 0.55 bloom threshold
+        vec3 pale=vec3(.55,.65,.70), mid=vec3(.45,.58,.68);
+        vec3 deep=vec3(.35,.50,.62);
         float lat=abs(vUv.y-.5)*2.;
         vec3 surface=mix(deep,mid,smoothstep(0.,.4,lat));
         surface=mix(surface,pale,smoothstep(.4,.7,lat));
         surface=mix(surface,mid,smoothstep(.7,1.,lat));
         surface+=haze*vec3(.08,.1,.12);
         float rim=1.-max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface=mix(surface,vec3(.92,.98,1.0),pow(rim,5.)*.35);
+        surface=mix(surface,vec3(.7,.8,.9),pow(rim,5.)*.3);
         float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface*=.6+.4*pow(mu,.35);
+        surface*=.5+.4*pow(mu,.35);
         gl_FragColor=vec4(surface,1.);
       }
     `,
@@ -750,7 +751,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
       {/* Saturn's rings */}
       {data.name === 'Saturn' && ringMat && (
-        <mesh ref={ringRef} rotation={[0, 0, 0]}>
+        <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[data.size * 1.4, data.size * 2.3, 64]} />
           <primitive object={ringMat} attach="material" />
         </mesh>
