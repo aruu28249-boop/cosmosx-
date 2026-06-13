@@ -30,7 +30,7 @@ function saveQuizStore(obj) {
 }
 
 export default function ScenarioSimulator({ onScenarioSelect }) {
-// ── Scenario state ────────────────────────────────────────────────────────
+  // ── Scenario state ────────────────────────────────────────────────────────
   const [activeId,      setActiveId]      = useState(null)
   const [loading,       setLoading]       = useState(false)
   const [result,        setResult]        = useState(null)
@@ -95,8 +95,10 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   }
 
   const stopSpeaking = () => {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel()
-    utteranceRef.current = null
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
     setSpeaking(false)
   }
 
@@ -118,11 +120,11 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       setResult({ ...data, label, color })
       onScenarioSelect?.(scenarioId ?? 'custom')
       if (data.explanation) {
-const parts = [data.explanation]
-        if (data.impact?.length)         parts.push(data.impact.join('. '))
-        if (data.timeline?.oneYear)      parts.push('In the first year: '       + data.timeline.oneYear)
-        if (data.timeline?.tenYears)     parts.push('Over ten years: '          + data.timeline.tenYears)
-        if (data.timeline?.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
+        const parts = [data.explanation]
+        if (data.impact && data.impact.length)         parts.push(data.impact.join('. '))
+        if (data.timeline && data.timeline.oneYear)      parts.push('In the first year: '       + data.timeline.oneYear)
+        if (data.timeline && data.timeline.tenYears)     parts.push('Over ten years: '          + data.timeline.tenYears)
+        if (data.timeline && data.timeline.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
         speak(parts.join('. '))
       }
     } catch (err) {
@@ -130,6 +132,27 @@ const parts = [data.explanation]
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  const handleScenario = (s) => {
+    setActiveId(s.id)
+    triggerEffect(s.id)
+    runScenario({ scenarioId: s.id, label: s.label, color: s.color })
+  }
+
+  const handleCustomSubmit = async () => {
+    if (!customQ.trim()) return
+    setCustomSending(true)
+    const effect = pickEffect(customQ)
+    setActiveId('custom')
+    if (effect) triggerEffect(effect)
+    await runScenario({ customQuestion: customQ.trim(), label: 'Custom', color: '#60a5fa' })
+    setCustomSending(false)
+  }
+
+  const handleTimeMachineChange = (year) => {
+    setTmYear(year)
+    setTimeMachineDate(year)
   }
 
   const handleReset = () => {
@@ -534,7 +557,7 @@ const parts = [data.explanation]
                       return (
                         <button key={i} onClick={() => handleQuizAnswer(i)} disabled={answered} style={{
                           padding: '10px 14px', borderRadius: '10px',
-                          border, background, color, fontSize: '12px',
+                          border, background: bg, color, fontSize: '12px',
                           textAlign: 'left', lineHeight: 1.4,
                           cursor: answered ? 'default' : 'pointer', transition: 'all 0.2s',
                           fontFamily: 'sans-serif',
