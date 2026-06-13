@@ -212,7 +212,8 @@ const PLANET_VISUALS = {
   },
 }
 
-export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {)
+export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
+  const meshRef        = useRef()
   const atmoRef        = useRef()
 
   const moonRef        = useRef()
@@ -260,6 +261,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     blending: THREE.AdditiveBlending, opacity: 0.75,
   }), [moonGlowTex])
 
+  const initializedRef     = useRef(false)
   const backgroundAngleRef = useRef(0)
   const lastTmAngleRef = useRef(null)
 
@@ -277,6 +279,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
   useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.033)
+    const t  = clock.elapsedTime
 
     if (!initializedRef.current && data.orbitRadius > 0) {
       angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
@@ -296,18 +299,50 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
       angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, 0.08)
     }
 
-    const x = Math.cos(angleRef.current) * data.orbitRadius
-    const z = Math.sin(angleRef.current) * data.orbitRadius
-    meshRef.current.position.set(x, 0, z)
-    // Planet rotation (spin on axis) also continues normally!
-    meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier
+    // ── Scenario speed modifier ───────────────────────────────────────────
+    let scenarioMult = 1
+    if (activeEffect === 'sun-brighter') {
+      scenarioMult = 1.5
+    }
+    if (activeEffect === 'jupiter-disappear' && data.name !== 'Jupiter') {
+      scenarioMult = 1 + Math.sin(t * 0.6 + data.orbitRadius) * 0.25
+    }
 
-    if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
+    angleRef.current += data.orbitSpeed * dt * timeMultiplier * scenarioMult * 0.3
+
+    let orbitR = data.orbitRadius
+    let y = 0
+
+    // ── Per-scenario orbital perturbations ────────────────────────────────
+    if (activeEffect === 'jupiter-disappear' && data.name !== 'Jupiter') {
+      // Orbits destabilise — slight elliptical stretch + inclination wobble
+      orbitR *= 1 + Math.sin(t * 0.25 + data.orbitRadius) * 0.04
+      y = Math.sin(t * 0.45 + data.orbitRadius * 0.8) * 1.2
+    }
+    if (activeEffect === 'asteroid-hit-mars' && data.name === 'Mars') {
+      // Impact knocks Mars into a slightly tilted orbit
+      y = Math.sin(t * 1.6) * 1.8
+    }
+    if (activeEffect === 'two-moons' && data.name === 'Earth') {
+      // Extra tidal forces from second moon cause slight orbital wobble
+      y = Math.sin(t * 0.9) * 0.4
+    }
+    if (activeEffect === 'sun-brighter') {
+      // Increased radiation pressure subtly perturbs smaller planets
+      y = Math.sin(t * 0.5 + data.orbitRadius * 0.3) * (data.size < 2 ? 0.5 : 0.15)
+    }
+
+    const x = Math.cos(angleRef.current) * orbitR
+    const z = Math.sin(angleRef.current) * orbitR
+    meshRef.current.position.set(x, y, z)
+    meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier * scenarioMult
+
+    if (atmoRef.current) atmoRef.current.position.set(x, y, z)
 
     if (meshRef.current?.material?.uniforms?.time) {
-      meshRef.current.material.uniforms.time.value = clock.elapsedTime
+      meshRef.current.material.uniforms.time.value = t
     }
-    if (onPositionUpdate) onPositionUpdate({ x, y: 0, z })
+    if (onPositionUpdate) onPositionUpdate({ x, y, z })
 
     // Jupiter disappear effect
     if (data.name === 'Jupiter' && activeEffect === 'jupiter-disappear') {
