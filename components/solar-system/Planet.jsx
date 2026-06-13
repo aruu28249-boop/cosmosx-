@@ -289,9 +289,9 @@ const PLANET_VISUALS = {
 
   Venus: {
     shader: true,
-    atmosphereColor: new THREE.Color(1.0, 0.85, 0.6),
-    atmosphereOpacity: 0.22,
-    atmosphereScale: 1.15,
+    atmosphereColor: new THREE.Color(0.9, 0.7, 0.4),
+    atmosphereOpacity: 0.15,
+    atmosphereScale: 1.1,
     vert: /* glsl */`
       varying vec2 vUv; varying vec3 vNormal;
       void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
@@ -311,22 +311,22 @@ const PLANET_VISUALS = {
         float clouds2=fbm(cUv*1.3+vec2(.9,.4));
         float cloudMask=smoothstep(.42,.58,clouds)*smoothstep(.48,.65,clouds2);
         
-        // Venus is thick yellowish-white atmosphere
-        vec3 cream=vec3(1.0,.92,.78), pale=vec3(.95,.85,.65);
-        vec3 gold=vec3(.88,.75,.50), deep=vec3(.78,.62,.38);
+        // Venus - distinctly orange/yellow, very different from Saturn
+        vec3 bright=vec3(.95,.75,.35), mid=vec3(.85,.62,.28);
+        vec3 dark=vec3(.72,.52,.18), orange=vec3(.88,.68,.25);
         
         float stripe=sin(vUv.y*30.+clouds*4.)*.5+.5;
-        vec3 surface=mix(deep,gold,smoothstep(0.,.3,stripe));
-        surface=mix(surface,pale,smoothstep(.3,.6,stripe));
-        surface=mix(surface,cream,smoothstep(.6,1.,stripe));
+        vec3 surface=mix(dark,orange,smoothstep(0.,.3,stripe));
+        surface=mix(surface,mid,smoothstep(.3,.6,stripe));
+        surface=mix(surface,bright,smoothstep(.6,1.,stripe));
         
-        // Thick cloud layer
-        surface=mix(surface,vec3(1.0,.95,.85),cloudMask*.5);
+        // Cloud layer
+        surface=mix(surface,vec3(.92,.82,.55),cloudMask*.35);
         
         float rim=1.-max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface=mix(surface,vec3(1.0,.92,.75),pow(rim,3.)*.4);
+        surface=mix(surface,vec3(.95,.82,.60),pow(rim,3.)*.25);
         float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface*=.5+.5*pow(mu,.4);
+        surface*=.55+.45*pow(mu,.4);
         gl_FragColor=vec4(surface,1.);
       }
     `,
@@ -368,9 +368,86 @@ const PLANET_VISUALS = {
       }
     `,
   },
+
+  Uranus: {
+    shader: true,
+    atmosphereColor: new THREE.Color(0.7, 0.9, 1.0),
+    atmosphereOpacity: 0.15,
+    atmosphereScale: 1.08,
+    vert: /* glsl */`
+      varying vec2 vUv; varying vec3 vNormal;
+      void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
+    `,
+    frag: /* glsl */`
+      uniform float time;
+      varying vec2 vUv; varying vec3 vNormal;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
+      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n(p);p*=2.;a*=.5;}return v;}
+      void main(){
+        float haze=fbm(vUv*3.+vec2(time*.001,0.))*.3;
+        vec3 pale=vec3(.85,.95,1.0), mid=vec3(.72,.88,.98);
+        vec3 deep=vec3(.58,.78,.92);
+        float lat=abs(vUv.y-.5)*2.;
+        vec3 surface=mix(deep,mid,smoothstep(0.,.4,lat));
+        surface=mix(surface,pale,smoothstep(.4,.7,lat));
+        surface=mix(surface,mid,smoothstep(.7,1.,lat));
+        surface+=haze*vec3(.08,.1,.12);
+        float rim=1.-max(0.,dot(vNormal,vec3(0.,0.,1.)));
+        surface=mix(surface,vec3(.92,.98,1.0),pow(rim,5.)*.35);
+        float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
+        surface*=.6+.4*pow(mu,.35);
+        gl_FragColor=vec4(surface,1.);
+      }
+    `,
+  },
+
+  Neptune: {
+    shader: true,
+    atmosphereColor: new THREE.Color(0.4, 0.6, 1.0),
+    atmosphereOpacity: 0.12,
+    atmosphereScale: 1.06,
+    vert: /* glsl */`
+      varying vec2 vUv; varying vec3 vNormal;
+      void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
+    `,
+    frag: /* glsl */`
+      uniform float time;
+      varying vec2 vUv; varying vec3 vNormal;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
+      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p*=2.1;a*=.5;}return v;}
+      void main(){
+        float storm=time*.003;
+        vec2 sUv=vUv*2.5+vec2(storm,storm*.6);
+        float clouds=fbm(sUv+vec2(.3,.7));
+        float stormMask=smoothstep(.52,.68,clouds);
+        vec2 spot=vec2(.35,.45);
+        float sD=length((vUv-spot)*vec2(4.,6.));
+        float darkSpot=1.-smoothstep(.08,.15,sD);
+        vec3 deep=vec3(.28,.48,.95), mid=vec3(.42,.65,.98);
+        vec3 bright=vec3(.58,.78,1.0), stormCol=vec3(.32,.55,.92);
+        float lat=abs(vUv.y-.5)*2.;
+        vec3 surface=mix(deep,mid,smoothstep(0.,.5,lat));
+        surface=mix(surface,bright,smoothstep(.5,1.,lat));
+        surface=mix(surface,stormCol,stormMask*.35);
+        surface*=1.-darkSpot*.25;
+        float rim=1.-max(0.,dot(vNormal,vec3(0.,0.,1.)));
+        surface=mix(surface,vec3(.65,.85,1.0),pow(rim,4.)*.35);
+        float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
+        surface*=.6+.4*pow(mu,.35);
+        gl_FragColor=vec4(surface,1.);
+      }
+    `,
+  },
 }
 
 export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
+  const meshRef        = useRef()
   const atmoRef        = useRef()
   const initializedRef = useRef(false)
 
@@ -562,10 +639,14 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     meshRef.current.position.set(x, y, z)
     meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier * scenarioMult
 
-    if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
+    if (atmoRef.current) atmoRef.current.position.set(x, y, z)
+    if (ringRef.current) ringRef.current.position.set(x, y, z)
 
     if (meshRef.current?.material?.uniforms?.time) {
       meshRef.current.material.uniforms.time.value = t
+    }
+    if (ringRef.current?.material?.uniforms?.time) {
+      ringRef.current.material.uniforms.time.value = t
     }
     if (onPositionUpdate) onPositionUpdate({ x, y: 0, z })
 
