@@ -184,6 +184,7 @@ function FloatingWords({ text, onLearnMore }) {
   const words = text.split(' ')
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisible([])
     setShowBtn(false)
     const timers = words.map((_, i) =>

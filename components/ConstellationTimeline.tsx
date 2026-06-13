@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { Search, Compass } from "lucide-react";
 
 type Mission = {
   id: string;
@@ -100,10 +101,12 @@ function MissionNode({ mission }: { mission: Mission }) {
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
       viewport={{ once: false, margin: "-100px" }}
-      transition={{ duration: 1, ease: "easeOut" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className="w-full"
     >
       {/*
@@ -215,6 +218,8 @@ function CardButton({
 
 export default function ConstellationTimeline() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAgency, setSelectedAgency] = useState("All");
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -223,26 +228,143 @@ export default function ConstellationTimeline() {
 
   const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
-  return (
-    <div ref={containerRef} className="relative w-full max-w-4xl mx-auto py-32 z-10">
+  const agencies = ["All", "NASA", "USSR", "ISRO", "ESA", "International"];
 
-      {/* ── Vertical spine line (real DOM, always at 50%) ── */}
-      <div className="absolute inset-0 flex justify-center pointer-events-none">
-        <div className="relative w-px h-full">
-          {/* Faint static line */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(150,200,255,0.15)] to-transparent" />
-          {/* Animated fill driven by scroll */}
-          <motion.div
-            className="absolute top-0 left-0 right-0 origin-top bg-gradient-to-b from-transparent via-[rgba(150,200,255,0.7)] to-transparent"
-            style={{ scaleY: pathLength }}
-          />
+  const filteredMissions = MISSIONS.filter((mission) => {
+    const matchesAgency =
+      selectedAgency === "All" ||
+      mission.agency.toLowerCase().includes(selectedAgency.toLowerCase());
+    
+    const matchesSearch =
+      mission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mission.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mission.detail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mission.agency.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mission.date.includes(searchQuery);
+
+    return matchesAgency && matchesSearch;
+  });
+
+  // Calculate some simple stats
+  const years = filteredMissions.map((m) => parseInt(m.date)).filter((y) => !isNaN(y));
+  const spanYears = years.length > 0 ? `${Math.min(...years)} – ${Math.max(...years)}` : "N/A";
+  const uniqueAgencies = new Set(filteredMissions.flatMap((m) => m.agency.split(" / "))).size;
+
+  return (
+    <div ref={containerRef} className="relative w-full max-w-4xl mx-auto py-12 px-4 z-10">
+      
+      {/* ── Search & Filter Controls ── */}
+      <div className="mb-16 flex flex-col gap-6 p-6 md:p-8 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl relative overflow-hidden">
+        {/* Subtle decorative glow */}
+        <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-indigo-500/10 blur-[80px] pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-cyan-500/10 blur-[80px] pointer-events-none" />
+
+        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between relative z-10">
+          {/* Search bar */}
+          <div className="relative flex-1">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
+              <Search className="w-4 h-4" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search cosmic milestones (e.g. Sputnik, Apollo, 2021)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/10 focus:border-indigo-400/50 hover:border-white/20 text-white rounded-xl pl-10 pr-4 py-3 text-sm transition-all focus:outline-none focus:ring-1 focus:ring-indigo-400/30 font-sans tracking-wide placeholder-white/30"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")} 
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white/80 transition-colors text-xs font-mono"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Agency Filter pills */}
+        <div className="flex flex-col gap-3 relative z-10">
+          <span className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold">Filter by Space Agency</span>
+          <div className="flex flex-wrap gap-2">
+            {agencies.map((agency) => {
+              const active = selectedAgency === agency;
+              return (
+                <button
+                  key={agency}
+                  onClick={() => setSelectedAgency(agency)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition-all duration-300 cursor-pointer border
+                    ${active 
+                      ? "bg-indigo-500/20 border-indigo-400/50 text-indigo-200 shadow-[0_0_15px_rgba(99,102,241,0.25)]" 
+                      : "bg-white/[0.02] border-white/5 text-white/60 hover:text-white hover:border-white/15"
+                    }`}
+                >
+                  {agency}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mini stats block */}
+        <div className="grid grid-cols-3 gap-4 pt-6 mt-2 border-t border-white/5 text-center relative z-10">
+          <div>
+            <div className="text-white/45 text-[9px] uppercase tracking-widest font-sans mb-1">Milestones</div>
+            <div className="text-white font-mono text-xl font-bold tracking-wide">{filteredMissions.length}</div>
+          </div>
+          <div>
+            <div className="text-white/45 text-[9px] uppercase tracking-widest font-sans mb-1">Agencies</div>
+            <div className="text-white font-mono text-xl font-bold tracking-wide">{uniqueAgencies}</div>
+          </div>
+          <div>
+            <div className="text-white/45 text-[9px] uppercase tracking-widest font-sans mb-1">Time Span</div>
+            <div className="text-white font-mono text-sm md:text-base font-bold tracking-wide mt-1.5 md:mt-0">{spanYears}</div>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-24">
-        {MISSIONS.map((mission) => (
-          <MissionNode key={mission.id} mission={mission} />
-        ))}
+      {/* ── Vertical spine line (real DOM, always at 50%) ── */}
+      {filteredMissions.length > 0 && (
+        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex justify-center pointer-events-none mt-72 mb-16">
+          <div className="relative w-px h-full">
+            {/* Faint static line */}
+            <div className="absolute inset-y-0 bg-gradient-to-b from-transparent via-[rgba(150,200,255,0.15)] to-transparent w-px" />
+            {/* Animated fill driven by scroll */}
+            <motion.div
+              className="absolute top-0 left-0 right-0 origin-top bg-gradient-to-b from-transparent via-[rgba(150,200,255,0.7)] to-transparent w-px"
+              style={{ scaleY: pathLength }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Missions List ── */}
+      <div className="flex flex-col gap-24 relative">
+        <AnimatePresence mode="popLayout">
+          {filteredMissions.map((mission) => (
+            <MissionNode key={mission.id} mission={mission} />
+          ))}
+        </AnimatePresence>
+
+        {filteredMissions.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-20 border border-dashed border-white/10 rounded-2xl bg-white/[0.01]"
+          >
+            <Compass className="w-10 h-10 text-white/20 mx-auto mb-4 animate-pulse" />
+            <p className="text-white/60 font-sans tracking-wide text-sm font-medium">No space milestones found matching your criteria.</p>
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedAgency("All");
+              }}
+              className="mt-4 text-xs text-indigo-400 hover:text-indigo-300 font-mono tracking-widest uppercase cursor-pointer underline underline-offset-4"
+            >
+              Reset Filters
+            </button>
+          </motion.div>
+        )}
       </div>
     </div>
   );
