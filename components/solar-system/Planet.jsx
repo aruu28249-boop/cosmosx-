@@ -1,6 +1,7 @@
 'use client'
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { Trail, Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 // ── Sprite glow texture helper ────────────────────────────────────────────────
@@ -446,10 +447,12 @@ const PLANET_VISUALS = {
   },
 }
 
-export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
+export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen, isReturning }) {
   const meshRef        = useRef()
   const atmoRef        = useRef()
+  const labelRef       = useRef()
   const initializedRef = useRef(false)
+  const [hovered, setHovered] = useState(false)
 
   const moonRef        = useRef()
   const moon2Ref       = useRef()
@@ -566,16 +569,19 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
   const backgroundAngleRef = useRef(0)
   const lastTmAngleRef = useRef(null)
+  const lerpSpeedRef = useRef(0.08)
 
   useEffect(() => {
     if (timeMachineAngle != null) {
       // User scrubbed the time machine: snap the simulation base to this historical date
       realAngleRef.current = timeMachineAngle
       lastTmAngleRef.current = timeMachineAngle
+      lerpSpeedRef.current = 0.08
     } else if (lastTmAngleRef.current != null) {
       // User clicked 'Back to Today': snap the simulation base back to the live background date
       realAngleRef.current = backgroundAngleRef.current
       lastTmAngleRef.current = null
+      lerpSpeedRef.current = 0.08
     }
   }, [timeMachineAngle])
 
@@ -598,7 +604,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
       realAngleRef.current += advance
       
       // Visually spin towards the active simulation time (creates the rapid scrub effect)
-      angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, 0.08)
+      angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, lerpSpeedRef.current)
     }
 
     // ── Scenario speed modifier ───────────────────────────────────────────
@@ -641,6 +647,13 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
     if (atmoRef.current) atmoRef.current.position.set(x, y, z)
     if (ringRef.current) ringRef.current.position.set(x, y, z)
+    if (labelRef.current) labelRef.current.position.set(x, y + data.size + 1.2 + (hovered ? 0.3 : 0), z)
+
+    // Smooth hover scaling
+    const targetScale = hovered ? 1.08 : 1.0
+    meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15)
+    if (atmoRef.current) atmoRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15)
+    if (ringRef.current) ringRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15)
 
     if (meshRef.current?.material?.uniforms?.time) {
       meshRef.current.material.uniforms.time.value = t
@@ -692,19 +705,26 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
   return (
     <>
-      {/* Planet sphere */}
-      <mesh
-        ref={meshRef}
-        onClick={(e) => { e.stopPropagation(); onPlanetClick(data) }}
-        onPointerOver={() => document.body.style.cursor = 'pointer'}
-        onPointerOut={()  => document.body.style.cursor = 'auto'}
+      {/* Planet sphere with Trail */}
+      <Trail
+        width={(timeMachineFrozen || isReturning) ? data.size * 1.4 : data.size * 0.5}
+        length={(timeMachineFrozen || isReturning) ? 320 : 250}
+        color={visual?.atmosphereColor ?? data.color}
+        attenuation={(t) => t * t}
       >
-        <sphereGeometry args={[data.size, 64, 64]} />
-        {shaderMat
-          ? <primitive object={shaderMat} attach="material" />
-          : <meshStandardMaterial color={data.color} roughness={0.75} metalness={0.05} />
-        }
-      </mesh>
+        <mesh
+          ref={meshRef}
+          onClick={(e) => { e.stopPropagation(); onPlanetClick(data) }}
+          onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer' }}
+          onPointerOut={(e) => { e.stopPropagation(); setHovered(false); document.body.style.cursor = 'auto' }}
+        >
+          <sphereGeometry args={[data.size, 64, 64]} />
+          {shaderMat
+            ? <primitive object={shaderMat} attach="material" />
+            : <meshStandardMaterial color={data.color} roughness={0.75} metalness={0.05} />
+          }
+        </mesh>
+      </Trail>
 
       {/* Atmosphere shell */}
       {atmoMat && (
@@ -713,6 +733,20 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
           <primitive object={atmoMat} attach="material" />
         </mesh>
       )}
+
+      {/* 3D Label */}
+      <group ref={labelRef}>
+        <Html distanceFactor={60} center zIndexRange={[100, 0]}>
+          <div style={{
+            color: visual?.atmosphereColor ? `#${visual.atmosphereColor.getHexString()}` : data.color,
+            fontSize: '11px', fontWeight: 'bold', letterSpacing: '0.2em',
+            pointerEvents: 'none', textShadow: '0 0 12px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.8)',
+            textTransform: 'uppercase', opacity: 0.85, fontFamily: 'sans-serif'
+          }}>
+            {data.name}
+          </div>
+        </Html>
+      </group>
 
       {/* Saturn's rings */}
       {data.name === 'Saturn' && ringMat && (
