@@ -569,16 +569,19 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
   const backgroundAngleRef = useRef(0)
   const lastTmAngleRef = useRef(null)
+  const lerpSpeedRef = useRef(0.08)
 
   useEffect(() => {
     if (timeMachineAngle != null) {
       // User scrubbed the time machine: snap the simulation base to this historical date
       realAngleRef.current = timeMachineAngle
       lastTmAngleRef.current = timeMachineAngle
+      lerpSpeedRef.current = 0.08
     } else if (lastTmAngleRef.current != null) {
       // User clicked 'Back to Today': snap the simulation base back to the live background date
       realAngleRef.current = backgroundAngleRef.current
       lastTmAngleRef.current = null
+      lerpSpeedRef.current = 0.08
     }
   }, [timeMachineAngle])
 
@@ -601,7 +604,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
       realAngleRef.current += advance
       
       // Visually spin towards the active simulation time (creates the rapid scrub effect)
-      angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, 0.08)
+      angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, lerpSpeedRef.current)
     }
 
     // ── Scenario speed modifier ───────────────────────────────────────────
@@ -705,7 +708,7 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
       {/* Planet sphere with Trail */}
       <Trail
         width={data.size * 0.5}
-        length={Math.floor(data.orbitRadius * 1.5)}
+        length={250}
         color={visual?.atmosphereColor ?? data.color}
         attenuation={(t) => t * t}
       >
