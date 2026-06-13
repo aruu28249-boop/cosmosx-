@@ -30,7 +30,7 @@ function saveQuizStore(obj) {
 }
 
 export default function ScenarioSimulator({ onScenarioSelect }) {
-// ── Scenario state ────────────────────────────────────────────────────────
+  // ── Scenario state ────────────────────────────────────────────────────────
   const [activeId,      setActiveId]      = useState(null)
   const [loading,       setLoading]       = useState(false)
   const [result,        setResult]        = useState(null)
@@ -101,8 +101,6 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       audioRef.current.pause()
       audioRef.current = null
     }
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel()
-    utteranceRef.current = null
     setSpeaking(false)
   }
 
@@ -124,20 +122,19 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       setResult({ ...data, label, color })
       onScenarioSelect?.(scenarioId ?? 'custom')
       if (data.explanation) {
-const parts = [data.explanation]
-        if (data.impact?.length)         parts.push(data.impact.join('. '))
-        if (data.timeline?.oneYear)      parts.push('In the first year: '       + data.timeline.oneYear)
-        if (data.timeline?.tenYears)     parts.push('Over ten years: '          + data.timeline.tenYears)
-        if (data.timeline?.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
+        const parts = [data.explanation]
+        if (data.impact && data.impact.length)         parts.push(data.impact.join('. '))
+        if (data.timeline && data.timeline.oneYear)      parts.push('In the first year: '       + data.timeline.oneYear)
+        if (data.timeline && data.timeline.tenYears)     parts.push('Over ten years: '          + data.timeline.tenYears)
+        if (data.timeline && data.timeline.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
         speak(parts.join('. '))
       }
-    } catch (err) {
+} catch (err) {
       setError(err.message || 'Could not reach AI. Visual effect is still active.')
     } finally {
       setLoading(false)
     }
-  }, [])
-
+  }, [onScenarioSelect, speak])
 
   const handleScenario = (s) => {
     setActiveId(s.id)
@@ -145,25 +142,24 @@ const parts = [data.explanation]
     runScenario({ scenarioId: s.id, label: s.label, color: s.color })
   }
 
-  const handleCustomSubmit = () => {
-    if (!customQ.trim() || customSending) return
+const handleCustomSubmit = async () => {
+    if (!customQ.trim()) return
     setCustomSending(true)
-    setActiveId('custom')
     const effect = pickEffect(customQ)
+    setActiveId('custom')
     if (effect) triggerEffect(effect)
-    runScenario({ customQuestion: customQ.trim(), label: 'Custom', color: '#60a5fa' })
-      .finally(() => setCustomSending(false))
+    await runScenario({ customQuestion: customQ.trim(), label: 'Custom', color: '#60a5fa' })
+    setCustomSending(false)
   }
 
   const handleTimeMachineChange = (year) => {
     setTmYear(year)
-    if (year === currentYear) {
+if (year === currentYear) {
       setTimeMachineDate(null)
     } else {
       setTimeMachineDate(new Date(year, 6, 1))
     }
   }
-
 
   const handleReset = () => {
     stopSpeaking()
@@ -202,6 +198,7 @@ const parts = [data.explanation]
   // ── Quiz ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const store = loadQuizStore()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStreak(store.streak ?? 0)
   }, [])
 
@@ -568,7 +565,7 @@ const parts = [data.explanation]
                   borderRadius: '50%', animation: 'spin 0.8s linear infinite',
                 }} />
                 <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-                Generating today's question…
+                Generating today&apos;s question…
               </div>
             )}
 

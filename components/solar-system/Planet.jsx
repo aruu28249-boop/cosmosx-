@@ -212,8 +212,7 @@ const PLANET_VISUALS = {
   },
 }
 
-export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
-  const meshRef        = useRef()
+export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {)
   const atmoRef        = useRef()
 
   const moonRef        = useRef()
@@ -225,8 +224,6 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   const moon2AngleRef  = useRef(Math.PI)
   const realAngleRef   = useRef(0)
   const opacityRef     = useRef(1)
-  const initializedRef = useRef(false)
-
   const visual = PLANET_VISUALS[data.name]
 
   const shaderMat = useMemo(() => {
@@ -307,19 +304,24 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
 
     if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
 
-    if (shaderMat?.uniforms) shaderMat.uniforms.time.value = clock.elapsedTime
+    if (meshRef.current?.material?.uniforms?.time) {
+      meshRef.current.material.uniforms.time.value = clock.elapsedTime
+    }
     if (onPositionUpdate) onPositionUpdate({ x, y: 0, z })
 
     // Jupiter disappear effect
     if (data.name === 'Jupiter' && activeEffect === 'jupiter-disappear') {
-      if (shaderMat) shaderMat.transparent = true
+      if (meshRef.current?.material) meshRef.current.material.transparent = true
       if (opacityRef.current > 0) opacityRef.current = Math.max(0, opacityRef.current - 0.005)
-      if (shaderMat) shaderMat.opacity = opacityRef.current
+      if (meshRef.current?.material) meshRef.current.material.opacity = opacityRef.current
       meshRef.current.visible = opacityRef.current > 0
       if (atmoRef.current) atmoRef.current.visible = opacityRef.current > 0
     } else if (data.name === 'Jupiter') {
       opacityRef.current = 1
-      if (shaderMat) { shaderMat.transparent = false; shaderMat.opacity = 1 }
+      if (meshRef.current?.material) { 
+        meshRef.current.material.transparent = false
+        meshRef.current.material.opacity = 1 
+      }
       meshRef.current.visible = true
       if (atmoRef.current) atmoRef.current.visible = true
     }

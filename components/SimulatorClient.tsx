@@ -74,7 +74,7 @@ export default function SimulatorClient() {
         </Suspense>
       </div>
       <Suspense fallback={null}>
-        <ScenarioSimulator />
+        <ScenarioSimulator onScenarioSelect={() => {}} />
       </Suspense>
     </>
   )

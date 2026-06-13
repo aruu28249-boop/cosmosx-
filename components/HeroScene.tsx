@@ -98,7 +98,7 @@ function CinematicSequence() {
       '/planet_map.png',
       (tex) => setTexture(tex),
       undefined,
-      (err) => console.warn("Waiting for planet_map.png to be copied to public folder...")
+      () => console.warn("Waiting for planet_map.png to be copied to public folder...")
     );
   }, []);
 

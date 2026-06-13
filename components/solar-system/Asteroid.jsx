@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState } from 'react'
+import { useRef, useMemo, useState, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -179,49 +179,47 @@ function ExplosionParticles({ active, impactPos }) {
   const dataRef    = useRef(null)
   const timeRef    = useRef(0)
 
-  // Initialise explosion data on activation
-  if (active && !dataRef.current) {
-    const particles = []
-    for (let i = 0; i < EXPLOSION_COUNT; i++) {
-      // Spherical burst
-      const theta = Math.random() * Math.PI * 2
-      const phi   = Math.acos(2 * Math.random() - 1)
-      const speed = 2 + Math.random() * 12
-      particles.push({
-        vx: Math.sin(phi) * Math.cos(theta) * speed,
-        vy: Math.sin(phi) * Math.sin(theta) * speed * 0.6 + Math.random() * 3,
-        vz: Math.cos(phi) * speed,
-        life: 0.6 + Math.random() * 1.8,
-        size: 0.15 + Math.random() * 0.5,
-        // Color temperature: white-hot core → orange → red → dark
-        temp: Math.random(),
-      })
+  useEffect(() => {
+    if (active && !dataRef.current) {
+      const particles = []
+      for (let i = 0; i < EXPLOSION_COUNT; i++) {
+        const theta = Math.random() * Math.PI * 2
+        const phi   = Math.acos(2 * Math.random() - 1)
+        const speed = 2 + Math.random() * 12
+        particles.push({
+          vx: Math.sin(phi) * Math.cos(theta) * speed,
+          vy: Math.sin(phi) * Math.sin(theta) * speed * 0.6 + Math.random() * 3,
+          vz: Math.cos(phi) * speed,
+          life: 0.6 + Math.random() * 1.8,
+          size: 0.15 + Math.random() * 0.5,
+          temp: Math.random(),
+        })
+      }
+
+      const debris = []
+      for (let i = 0; i < DEBRIS_COUNT; i++) {
+        const angle = Math.random() * Math.PI * 2
+        const sp    = 1 + Math.random() * 6
+        debris.push({
+          x: impactPos.x, y: impactPos.y || 0, z: impactPos.z,
+          vx: Math.cos(angle) * sp * (0.5 + Math.random()),
+          vy: 1 + Math.random() * 5,
+          vz: Math.sin(angle) * sp * (0.5 + Math.random()),
+          rotSpeed: (Math.random() - 0.5) * 10,
+          scale: 0.1 + Math.random() * 0.35,
+          life: 1.0 + Math.random() * 2.0,
+        })
+      }
+
+      dataRef.current = { particles, debris, elapsed: 0 }
+      timeRef.current = 0
     }
 
-    const debris = []
-    for (let i = 0; i < DEBRIS_COUNT; i++) {
-      const angle = Math.random() * Math.PI * 2
-      const sp    = 1 + Math.random() * 6
-      debris.push({
-        x: impactPos.x, y: impactPos.y || 0, z: impactPos.z,
-        vx: Math.cos(angle) * sp * (0.5 + Math.random()),
-        vy: 1 + Math.random() * 5,
-        vz: Math.sin(angle) * sp * (0.5 + Math.random()),
-        rotSpeed: (Math.random() - 0.5) * 10,
-        scale: 0.1 + Math.random() * 0.35,
-        life: 1.0 + Math.random() * 2.0,
-      })
+    if (!active && dataRef.current) {
+      dataRef.current = null
+      timeRef.current = 0
     }
-
-    dataRef.current = { particles, debris, elapsed: 0 }
-    timeRef.current = 0
-  }
-
-  // Reset when deactivated
-  if (!active && dataRef.current) {
-    dataRef.current = null
-    timeRef.current = 0
-  }
+  }, [active, impactPos])
 
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry()
@@ -251,9 +249,9 @@ function ExplosionParticles({ active, impactPos }) {
     d.elapsed += delta
     timeRef.current += delta
 
-    const posArr  = geo.attributes.position.array
-    const colArr  = geo.attributes.color.array
-    const sizeArr = geo.attributes.size.array
+    const posArr  = pointsRef.current.geometry.attributes.position.array
+    const colArr  = pointsRef.current.geometry.attributes.color.array
+    const sizeArr = pointsRef.current.geometry.attributes.size.array
 
     for (let i = 0; i < EXPLOSION_COUNT; i++) {
       const p = d.particles[i]
@@ -295,12 +293,14 @@ function ExplosionParticles({ active, impactPos }) {
       sizeArr[i] = p.size * fade * (1 + (1 - lifeRatio) * 2)
     }
 
-    geo.attributes.position.needsUpdate = true
-    geo.attributes.color.needsUpdate    = true
-    geo.attributes.size.needsUpdate     = true
+    pointsRef.current.geometry.attributes.position.needsUpdate = true
+    pointsRef.current.geometry.attributes.color.needsUpdate    = true
+    pointsRef.current.geometry.attributes.size.needsUpdate     = true
 
     // Fade overall opacity
-    mat.opacity = Math.max(0, 1 - d.elapsed / 2.5)
+    if (pointsRef.current?.material) {
+      pointsRef.current.material.opacity = Math.max(0, 1 - d.elapsed / 2.5)
+    }
 
     // Update debris chunks
     debrisRefs.current.forEach((ref, i) => {
@@ -459,7 +459,7 @@ function ImpactFlash({ active, impactPos }) {
 
 // ─── Camera shake ─────────────────────────────────────────────────────────────
 function CameraShake({ active }) {
-  const { camera } = useThree()
+  const state = useThree()
   const basePos    = useRef(null)
   const timeRef    = useRef(0)
 
@@ -468,7 +468,7 @@ function CameraShake({ active }) {
 
     if (!active) {
       if (basePos.current) {
-        camera.position.copy(basePos.current)
+        state.camera.position.set(basePos.current.x, basePos.current.y, basePos.current.z)
         basePos.current = null
         timeRef.current = 0
       }
@@ -476,7 +476,7 @@ function CameraShake({ active }) {
     }
 
     if (!basePos.current) {
-      basePos.current = camera.position.clone()
+      basePos.current = state.camera.position.clone()
     }
 
     timeRef.current += dt
@@ -486,12 +486,13 @@ function CameraShake({ active }) {
     const intensity = falloff * falloff * 0.8
 
     if (intensity > 0.01) {
-      // Smooth sine shake — avoids fighting OrbitControls with random jitter
-      camera.position.x = basePos.current.x + Math.sin(t * 38) * intensity
-      camera.position.y = basePos.current.y + Math.cos(t * 31) * intensity * 0.7
-      camera.position.z = basePos.current.z + Math.sin(t * 24) * intensity * 0.4
+      state.camera.position.x = basePos.current.x + (Math.random() - 0.5) * intensity
+      state.camera.position.y = basePos.current.y + (Math.random() - 0.5) * intensity
+      state.camera.position.z = basePos.current.z + (Math.random() - 0.5) * intensity * 0.5
     } else {
-      camera.position.copy(basePos.current)
+      state.camera.position.x = basePos.current.x
+      state.camera.position.y = basePos.current.y
+      state.camera.position.z = basePos.current.z
     }
   })
 
@@ -574,8 +575,8 @@ export default function Asteroid({ targetPosition, targetRef, timeMultiplier = 1
     const dt = Math.min(delta, 0.033)
 
     // Update shader time
-    if (asteroidMat.uniforms) {
-      asteroidMat.uniforms.time.value = clock.elapsedTime
+    if (meshRef.current?.material?.uniforms?.time) {
+      meshRef.current.material.uniforms.time.value = clock.elapsedTime
     }
 
     // ── Trail particles (while flying) ──
@@ -693,12 +694,12 @@ export default function Asteroid({ targetPosition, targetRef, timeMultiplier = 1
     if (glow1Ref.current) {
       glow1Ref.current.position.set(px, py, pz)
       glow1Ref.current.scale.setScalar(glowPulse)
-      glowMat1.opacity = 0.3 + Math.sin(clock.elapsedTime * 8) * 0.1
+      if (glow1Ref.current.material) glow1Ref.current.material.opacity = 0.3 + Math.sin(clock.elapsedTime * 8) * 0.1
     }
     if (glow2Ref.current) {
       glow2Ref.current.position.set(px, py, pz)
       glow2Ref.current.scale.setScalar(glowPulse * 1.05)
-      glowMat2.opacity = 0.15 + Math.sin(clock.elapsedTime * 5) * 0.06
+      if (glow2Ref.current.material) glow2Ref.current.material.opacity = 0.15 + Math.sin(clock.elapsedTime * 5) * 0.06
     }
     if (glow3Ref.current) {
       glow3Ref.current.position.set(px, py, pz)
@@ -715,7 +716,7 @@ export default function Asteroid({ targetPosition, targetRef, timeMultiplier = 1
       const quat = new THREE.Quaternion().setFromUnitVectors(up, backDir)
       heatConeRef.current.quaternion.copy(quat)
       // Pulse the cone opacity
-      heatConeMat.opacity = 0.2 + Math.sin(clock.elapsedTime * 10) * 0.08
+      if (heatConeRef.current.material) heatConeRef.current.material.opacity = 0.2 + Math.sin(clock.elapsedTime * 10) * 0.08
     }
 
     // Move trailing point light

@@ -221,13 +221,10 @@ export default function SolarSystem() {
   const [surfacePlanet,  setSurfacePlanet]  = useState(null)
   const [timeMachineDate, setTimeMachineDateState] = useState(null)
 
-  // Today's real orbital angles (computed once on mount)
   const initialAngles = useMemo(() => getPlanetAngles(new Date()), [])
-
-  // Angles for whatever date the time machine is set to
   const timeMachineAngles = useMemo(
-    () => timeMachineDate ? getPlanetAngles(timeMachineDate) : null,
-    [timeMachineDate],
+    () => (timeMachineDate ? getPlanetAngles(timeMachineDate) : null),
+    [timeMachineDate]
   )
 
   // Reset camera when exiting surface mode
