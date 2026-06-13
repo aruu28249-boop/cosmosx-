@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState, useEffect } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -64,7 +64,6 @@ export default function AsteroidBelt({ count = 2000, innerRadius = 50, outerRadi
       }
 
       beltData.current = { positions, scales, rotations, speeds, phases, colors }
-      setIsInitialized(true)
     }
   }, [count, innerRadius, outerRadius])
 
