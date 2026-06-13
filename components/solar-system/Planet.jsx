@@ -69,41 +69,39 @@ const PLANET_VISUALS = {
                       fbm(vUv * 2.8 + vec2(1.7, 9.2)));
         float land = fbm(vUv * 2.2 + 0.8 * q + vec2(0.3, 0.7));
 
-        // ── Clouds (drift slowly east, ~25% coverage) ───────────────────
-        vec2 cUv = vUv * 2.5 + vec2(time * 0.004, 0.0);
+        // ── Clouds (drift slowly east with more dynamic movement) ───────────────────
+        vec2 cUv = vUv * 2.5 + vec2(time * 0.006, 0.0);
+        vec2 cUv2 = vUv * 3.0 + vec2(time * 0.004, time * 0.002);
         float cloud = cfbm(cUv + vec2(0.8, 1.2));
-        // Raised threshold → much less cloud coverage, more blue ocean visible
-        float cloudMask = smoothstep(0.64, 0.74, cloud);
+        float cloud2 = cfbm(cUv2 + vec2(1.5, 0.5));
+        // More dynamic cloud coverage with varying opacity
+        float cloudMask = smoothstep(0.62, 0.76, cloud) * smoothstep(0.58, 0.72, cloud2);
 
-        // ── Polar ice (smaller caps, more ocean visible) ────────────────
+        // ── Polar ice (dynamic with seasonal hint) ────────────────
         float lat   = abs(vUv.y - 0.5) * 2.0;
-        float polar = smoothstep(0.78, 0.94, lat);
+        float polar = smoothstep(0.76, 0.94, lat);
 
         // ── Surface colours ──────────────────────────────────────────────
         vec3 deepOcean   = vec3(0.02, 0.10, 0.45);
         vec3 shallowSea  = vec3(0.05, 0.28, 0.62);
         vec3 coast       = vec3(0.10, 0.44, 0.58);
-        vec3 lowland     = vec3(0.20, 0.40, 0.16);   // dark green jungle
-        vec3 midland     = vec3(0.30, 0.50, 0.20);   // mid green
-        vec3 highland    = vec3(0.46, 0.40, 0.26);   // brown-tan
-        vec3 mountain    = vec3(0.58, 0.54, 0.48);   // grey rock
+        vec3 lowland     = vec3(0.20, 0.40, 0.16);
+        vec3 midland     = vec3(0.30, 0.50, 0.20);
+        vec3 highland    = vec3(0.46, 0.40, 0.26);
+        vec3 mountain    = vec3(0.58, 0.54, 0.48);
         vec3 snow        = vec3(0.92, 0.95, 0.99);
-        vec3 desert      = vec3(0.70, 0.60, 0.36);   // Sahara tan
+        vec3 desert      = vec3(0.70, 0.60, 0.36);
 
-        // ~65% ocean, ~35% land — realistic Earth water coverage
         vec3 surface;
         if (land < 0.36) {
-          // Deep ocean
           surface = mix(deepOcean, shallowSea, smoothstep(0.20, 0.32, land));
           surface = mix(surface, coast, smoothstep(0.32, 0.36, land));
         } else if (land < 0.48) {
-          // Green lowland / jungle
           float t    = smoothstep(0.36, 0.48, land);
           float trop = smoothstep(0.30, 0.55, lat);
           vec3 veg   = mix(lowland, midland, trop * 0.5);
           surface    = mix(coast, veg, t);
         } else if (land < 0.60) {
-          // Mid green to tan
           float trop = smoothstep(0.22, 0.52, lat);
           surface    = mix(midland, mix(midland, desert, trop * 0.7), smoothstep(0.48, 0.60, land));
         } else if (land < 0.70) {
@@ -112,21 +110,23 @@ const PLANET_VISUALS = {
           surface = mix(mountain, snow, smoothstep(0.70, 0.85, land));
         }
 
-        // ── Polar caps override ──────────────────────────────────────────
         surface = mix(surface, snow, polar);
 
-        // ── Cloud layer (thin wispy white) ───────────────────────────────
+        // ── More dynamic cloud layer with shadows ───────────────────────────────
         vec3 cloudCol = mix(vec3(0.88,0.90,0.95), snow, 0.5);
-        surface = mix(surface, cloudCol, cloudMask * 0.80);
+        vec3 cloudShadow = vec3(0.0, 0.02, 0.08);
+        surface = mix(surface, cloudCol, cloudMask * 0.85);
+        surface = mix(surface, surface * 0.7 + cloudShadow, cloudMask * 0.15);
 
-        // ── Ocean specular glint (bright where normal faces viewer) ──────
+        // ── Enhanced ocean specular with animated glint ──────
         float isOcean   = 1.0 - smoothstep(0.32, 0.40, land);
         float spec      = pow(max(0.0, dot(normalize(vNormal), vec3(0.3, 0.5, 0.8))), 28.0);
-        surface        += isOcean * spec * 0.55 * (1.0 - cloudMask);
+        float glint     = sin(time * 2.0 + vUv.x * 10.0) * 0.5 + 0.5;
+        surface        += isOcean * spec * 0.60 * (1.0 - cloudMask) * (0.8 + glint * 0.2);
 
-        // ── Atmospheric limb scattering (very subtle blue haze only at grazing edge) ──
+        // ── Atmospheric limb scattering ──
         float rim = 1.0 - max(0.0, dot(vNormal, vec3(0., 0., 1.)));
-        surface   = mix(surface, vec3(0.30, 0.58, 1.0), pow(rim, 6.0) * 0.25);
+        surface   = mix(surface, vec3(0.30, 0.58, 1.0), pow(rim, 6.0) * 0.28);
 
         gl_FragColor = vec4(surface, 1.0);
       }
@@ -155,16 +155,28 @@ const PLANET_VISUALS = {
         float terrain=fbm(vUv*2.5+0.7*q+vec2(.2,.5));
         float craters=fbm(vUv*8.+vec2(1.3,.8));
         float lat=abs(vUv.y-.5)*2.; float polar=smoothstep(.80,.95,lat);
+        
+        // Dust storm animation
+        vec2 dUv=vUv*3.+vec2(time*.003,time*.001);
+        float dust=fbm(dUv+vec2(.5,.3));
+        float dustStorm=smoothstep(.55,.70,dust);
+        
         vec3 rust=vec3(.72,.22,.06), dark=vec3(.42,.12,.04);
         vec3 bright=vec3(.88,.48,.22), highland=vec3(.60,.30,.12);
         vec3 iceCol=vec3(.93,.91,.89);
+        vec3 dustColor=vec3(.78,.38,.18);
+        
         vec3 surface=mix(dark,rust,smoothstep(.35,.58,terrain));
         surface=mix(surface,bright,smoothstep(.60,.76,terrain));
         surface=mix(surface,highland,smoothstep(.78,.90,terrain));
         surface*=1.-smoothstep(.62,.68,craters)*.30;
+        
+        // Apply dust storm with varying intensity
+        surface=mix(surface,dustColor,dustStorm*.25);
+        
         surface=mix(surface,iceCol,polar);
         float rim=1.-max(0.,dot(vNormal,vec3(0.,0.,1.)));
-        surface=mix(surface,vec3(.82,.34,.12),pow(rim,5.)*.40);
+        surface=mix(surface,vec3(.82,.34,.12),pow(rim,5.)*.42);
         gl_FragColor=vec4(surface,1.);
       }
     `,
@@ -172,7 +184,7 @@ const PLANET_VISUALS = {
 
   Jupiter: {
     shader: true,
-    atmosphereColor: new THREE.Color(0.82, 0.60, 0.35),
+    atmosphereColor: new THREE.Color(0.88, 0.65, 0.40),
     atmosphereOpacity: 0.06,
     atmosphereScale: 1.03,
     vert: /* glsl */`
@@ -188,22 +200,168 @@ const PLANET_VISUALS = {
         return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
       float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n(p);p*=2.1;a*=.5;}return v;}
       void main(){
-        float bs=time*.004*(0.5+sin(vUv.y*12.)*.5);
-        float turb=fbm(vec2(vUv.x*3.5+bs,vUv.y*1.8+time*.002))*.5;
-        float stripe=sin(vUv.y*18.+turb*6.);
-        vec2 sC=vec2(.28,.45); float sD=length((vUv-sC)*vec2(3.5,5.5));
+        // More turbulent band movement
+        float bs=time*.005*(0.5+sin(vUv.y*12.)*.5);
+        float turb=fbm(vec2(vUv.x*4.+bs,vUv.y*2.+time*.003))*.6;
+        float turb2=fbm(vec2(vUv.x*3.+time*.002,vUv.y*1.5))*.4;
+        float stripe=sin(vUv.y*20.+(turb+turb2)*7.);
+        
+        // Great Red Spot with subtle animation
+        vec2 sC=vec2(.28,.45);
+        sC.x+=sin(time*.001)*.02;
+        float sD=length((vUv-sC)*vec2(3.5,5.5));
         float spot=1.-smoothstep(.10,.22,sD);
-        vec3 b1=vec3(.78,.55,.32),b2=vec3(.56,.36,.20);
-        vec3 b3=vec3(.92,.80,.68),b4=vec3(.44,.22,.10);
-        vec3 sCol=vec3(.72,.18,.08);
+        
+        // Secondary storm
+        vec2 sC2=vec2(.65,.35);
+        sC2.x+=cos(time*.0008)*.015;
+        float sD2=length((vUv-sC2)*vec2(4.,3.));
+        float spot2=1.-smoothstep(.06,.12,sD2);
+        
+        // Jupiter - more distinct orange/brown bands
+        vec3 b1=vec3(.92,.72,.45),b2=vec3(.72,.48,.22);
+        vec3 b3=vec3(.82,.62,.35),b4=vec3(.52,.32,.12);
+        vec3 b5=vec3(.62,.42,.18), sCol=vec3(.78,.22,.08), sCol2=vec3(.68,.32,.15);
         float t=stripe*.5+.5;
-        vec3 surface=mix(b4,b2,smoothstep(0.,.3,t));
-        surface=mix(surface,b1,smoothstep(.3,.55,t));
-        surface=mix(surface,b3,smoothstep(.55,.80,t));
-        surface=mix(surface,b1,smoothstep(.80,1.,t));
+        vec3 surface=mix(b4,b5,smoothstep(0.,.2,t));
+        surface=mix(surface,b2,smoothstep(.2,.4,t));
+        surface=mix(surface,b3,smoothstep(.4,.6,t));
+        surface=mix(surface,b1,smoothstep(.6,.8,t));
+        surface=mix(surface,b3,smoothstep(.8,1.,t));
         surface=mix(surface,sCol,spot*.85);
+        surface=mix(surface,sCol2,spot2*.5);
         float eye=1.-smoothstep(.03,.07,sD);
-        surface=mix(surface,vec3(.92,.72,.60),eye*.6);
+        surface=mix(surface,vec3(.95,.78,.55),eye*.6);
+        float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
+        surface*=.6+.4*pow(mu,.3);
+        gl_FragColor=vec4(surface,1.);
+      }
+    `,
+  },
+
+  Mercury: {
+    shader: true,
+    atmosphereColor: new THREE.Color(0.6, 0.55, 0.5),
+    atmosphereOpacity: 0.04,
+    atmosphereScale: 1.02,
+    vert: /* glsl */`
+      varying vec2 vUv; varying vec3 vNormal;
+      void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
+    `,
+    frag: /* glsl */`
+      uniform float time;
+      varying vec2 vUv; varying vec3 vNormal;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
+      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<6;i++){v+=a*n(p);p*=2.;a*=.5;}return v;}
+      void main(){
+        vec2 q=vec2(fbm(vUv*4.+vec2(0.,0.)),fbm(vUv*4.+vec2(1.7,9.2)));
+        float terrain=fbm(vUv*3.5+0.6*q+vec2(.1,.3));
+        float craters=fbm(vUv*12.+vec2(2.1,1.4));
+        float rayed=fbm(vUv*20.+vec2(4.2,3.8));
+        
+        // Mercury - more realistic with brownish/reddish hues from iron oxides
+        vec3 dark=vec3(.38,.32,.28), mid=vec3(.52,.46,.42);
+        vec3 light=vec3(.68,.62,.58), bright=vec3(.78,.72,.68);
+        vec3 reddish=vec3(.62,.48,.42);
+        
+        vec3 surface=mix(dark,mid,smoothstep(.40,.55,terrain));
+        surface=mix(surface,light,smoothstep(.55,.70,terrain));
+        surface=mix(surface,bright,smoothstep(.75,.88,terrain));
+        surface=mix(surface,reddish,smoothstep(.45,.65,terrain)*.3);
+        
+        surface*=1.-smoothstep(.55,.65,craters)*.35;
+        surface*=1.-smoothstep(.70,.82,rayed)*.15;
+        
+        float lat=abs(vUv.y-.5)*2.;
+        float polar=smoothstep(.85,.95,lat);
+        vec3 ice=vec3(.92,.91,.89);
+        surface=mix(surface,ice,polar*.3);
+        
+        float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
+        surface*=.5+.5*pow(mu,.4);
+        gl_FragColor=vec4(surface,1.);
+      }
+    `,
+  },
+
+  Venus: {
+    shader: true,
+    atmosphereColor: new THREE.Color(1.0, 0.85, 0.6),
+    atmosphereOpacity: 0.22,
+    atmosphereScale: 1.15,
+    vert: /* glsl */`
+      varying vec2 vUv; varying vec3 vNormal;
+      void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
+    `,
+    frag: /* glsl */`
+      uniform float time;
+      varying vec2 vUv; varying vec3 vNormal;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
+      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p*=2.;a*=.5;}return v;}
+      void main(){
+        float swirl=time*.0015;
+        vec2 cUv=vUv*2.8+vec2(swirl,swirl*.5);
+        float clouds=fbm(cUv+vec2(.3,.6));
+        float clouds2=fbm(cUv*1.3+vec2(.9,.4));
+        float cloudMask=smoothstep(.42,.58,clouds)*smoothstep(.48,.65,clouds2);
+        
+        // Venus is thick yellowish-white atmosphere
+        vec3 cream=vec3(1.0,.92,.78), pale=vec3(.95,.85,.65);
+        vec3 gold=vec3(.88,.75,.50), deep=vec3(.78,.62,.38);
+        
+        float stripe=sin(vUv.y*30.+clouds*4.)*.5+.5;
+        vec3 surface=mix(deep,gold,smoothstep(0.,.3,stripe));
+        surface=mix(surface,pale,smoothstep(.3,.6,stripe));
+        surface=mix(surface,cream,smoothstep(.6,1.,stripe));
+        
+        // Thick cloud layer
+        surface=mix(surface,vec3(1.0,.95,.85),cloudMask*.5);
+        
+        float rim=1.-max(0.,dot(vNormal,vec3(0.,0.,1.)));
+        surface=mix(surface,vec3(1.0,.92,.75),pow(rim,3.)*.4);
+        float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
+        surface*=.5+.5*pow(mu,.4);
+        gl_FragColor=vec4(surface,1.);
+      }
+    `,
+  },
+
+  Saturn: {
+    shader: true,
+    atmosphereColor: new THREE.Color(0.98, 0.92, 0.65),
+    atmosphereOpacity: 0.08,
+    atmosphereScale: 1.05,
+    vert: /* glsl */`
+      varying vec2 vUv; varying vec3 vNormal;
+      void main(){ vUv=uv; vNormal=normalize(normalMatrix*normal);
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
+    `,
+    frag: /* glsl */`
+      uniform float time;
+      varying vec2 vUv; varying vec3 vNormal;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
+      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n(p);p*=2.1;a*=.5;}return v;}
+      void main(){
+        float turb=fbm(vec2(vUv.x*4.+time*.003,vUv.y*2.+time*.0015))*.4;
+        float stripe=sin(vUv.y*22.+turb*5.)*.5+.5;
+        
+        // Saturn - more golden/pale, distinct from Jupiter
+        vec3 b1=vec3(.98,.88,.62), b2=vec3(.88,.78,.52);
+        vec3 b3=vec3(.78,.68,.42), b4=vec3(.68,.58,.32);
+        vec3 b5=vec3(.58,.48,.22);
+        vec3 surface=mix(b5,b4,smoothstep(0.,.2,stripe));
+        surface=mix(surface,b3,smoothstep(.2,.4,stripe));
+        surface=mix(surface,b2,smoothstep(.4,.6,stripe));
+        surface=mix(surface,b1,smoothstep(.6,.8,stripe));
+        surface=mix(surface,b2,smoothstep(.8,1.,stripe));
         float mu=max(0.,dot(vNormal,vec3(0.,0.,1.)));
         surface*=.6+.4*pow(mu,.3);
         gl_FragColor=vec4(surface,1.);
@@ -213,19 +371,87 @@ const PLANET_VISUALS = {
 }
 
 export default function Planet({ data, timeMultiplier = 1, onPlanetClick, activeEffect, onPositionUpdate, initialAngle, timeMachineAngle, timeMachineFrozen }) {
-  const meshRef        = useRef()
   const atmoRef        = useRef()
+  const initializedRef = useRef(false)
 
   const moonRef        = useRef()
   const moon2Ref       = useRef()
   const moonGlow1Ref   = useRef()
   const moonGlow2Ref   = useRef()
+  const ringRef        = useRef()
   const angleRef       = useRef(0)
   const moonAngleRef   = useRef(0)
   const moon2AngleRef  = useRef(Math.PI)
   const realAngleRef   = useRef(0)
   const opacityRef     = useRef(1)
   const visual = PLANET_VISUALS[data.name]
+
+  // Saturn ring material
+  const ringMat = useMemo(() => {
+    if (data.name !== 'Saturn') return null
+    return new THREE.ShaderMaterial({
+      uniforms: { time: { value: 0 } },
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      vertexShader: /* glsl */`
+        varying vec2 vUv;
+        varying vec3 vPos;
+        void main() {
+          vUv = uv;
+          vPos = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */`
+        uniform float time;
+        varying vec2 vUv;
+        varying vec3 vPos;
+        
+        float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5); }
+        float n(vec2 p){
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(h(i), h(i + vec2(1.0, 0.0)), f.x),
+                     mix(h(i + vec2(0.0, 1.0)), h(i + vec2(1.0, 1.0)), f.x), f.y);
+        }
+        float fbm(vec2 p){
+          float v = 0.0, a = 0.5;
+          for(int i = 0; i < 4; i++) { v += a * n(p); p *= 2.0; a *= 0.5; }
+          return v;
+        }
+        
+        void main() {
+          float dist = length(vUv - 0.5) * 2.0;
+          
+          // Ring gaps (Cassini division, etc.)
+          float gap1 = smoothstep(0.45, 0.48, dist) * smoothstep(0.52, 0.48, dist);
+          float gap2 = smoothstep(0.72, 0.75, dist) * smoothstep(0.78, 0.75, dist);
+          float gap3 = smoothstep(0.88, 0.90, dist) * smoothstep(0.92, 0.90, dist);
+          float gaps = gap1 * 0.6 + gap2 * 0.4 + gap3 * 0.3;
+          
+          // Ring texture
+          float ringNoise = fbm(vec2(dist * 20.0, time * 0.001));
+          float ringPattern = smoothstep(0.3, 0.7, ringNoise);
+          
+          // Color variation across rings
+          vec3 innerColor = vec3(0.85, 0.72, 0.45);
+          vec3 midColor = vec3(0.75, 0.62, 0.38);
+          vec3 outerColor = vec3(0.65, 0.52, 0.30);
+          
+          vec3 color = mix(innerColor, midColor, smoothstep(0.4, 0.6, dist));
+          color = mix(color, outerColor, smoothstep(0.6, 0.8, dist));
+          color += ringPattern * vec3(0.05, 0.04, 0.02);
+          
+          // Fade at edges
+          float alpha = smoothstep(0.35, 0.42, dist) * smoothstep(0.95, 0.88, dist);
+          alpha *= (1.0 - gaps);
+          
+          gl_FragColor = vec4(color, alpha * 0.85);
+        }
+      `,
+    })
+  }, [data.name])
 
   const shaderMat = useMemo(() => {
     if (!visual?.shader) return null
@@ -261,7 +487,6 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     blending: THREE.AdditiveBlending, opacity: 0.75,
   }), [moonGlowTex])
 
-  const initializedRef     = useRef(false)
   const backgroundAngleRef = useRef(0)
   const lastTmAngleRef = useRef(null)
 
@@ -337,12 +562,12 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     meshRef.current.position.set(x, y, z)
     meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier * scenarioMult
 
-    if (atmoRef.current) atmoRef.current.position.set(x, y, z)
+    if (atmoRef.current) atmoRef.current.position.set(x, 0, z)
 
     if (meshRef.current?.material?.uniforms?.time) {
       meshRef.current.material.uniforms.time.value = t
     }
-    if (onPositionUpdate) onPositionUpdate({ x, y, z })
+    if (onPositionUpdate) onPositionUpdate({ x, y: 0, z })
 
     // Jupiter disappear effect
     if (data.name === 'Jupiter' && activeEffect === 'jupiter-disappear') {
@@ -405,6 +630,14 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
         <mesh ref={atmoRef}>
           <sphereGeometry args={[data.size * atmoScale, 32, 32]} />
           <primitive object={atmoMat} attach="material" />
+        </mesh>
+      )}
+
+      {/* Saturn's rings */}
+      {data.name === 'Saturn' && ringMat && (
+        <mesh ref={ringRef} rotation={[0, 0, 0]}>
+          <ringGeometry args={[data.size * 1.4, data.size * 2.3, 64]} />
+          <primitive object={ringMat} attach="material" />
         </mesh>
       )}
 

@@ -232,12 +232,12 @@ function InteractionHints() {
 }
 
 export default function SolarSystem() {
-  const [selectedPlanet,    setSelectedPlanet]    = useState(null)
-  const [multiplier,        setMultiplier]        = useState(1)
-  const [activeEffect,      setActiveEffect]      = useState(null)
-  const [marsFlash,         setMarsFlash]         = useState(false)
-  const [surfacePlanet,     setSurfacePlanet]     = useState(null)
-  const [timeMachineDate,   setTimeMachineDateState] = useState(null)
+  const [selectedPlanet, setSelectedPlanet] = useState(null)
+  const [multiplier,     setMultiplier]     = useState(1)
+  const [activeEffect,   setActiveEffect]   = useState(null)
+  const [marsFlash,      setMarsFlash]      = useState(false)
+  const [surfacePlanet,  setSurfacePlanet]  = useState(null)
+  const [timeMachineDate, setTimeMachineDateState] = useState(null)
 
   const initialAngles = useMemo(() => getPlanetAngles(new Date()), [])
   const timeMachineAngles = useMemo(
@@ -255,6 +255,14 @@ export default function SolarSystem() {
     }
     prevSurfaceRef.current = surfacePlanet
   }, [surfacePlanet])
+
+  // Update current time every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     _effectCallback      = (name) => setActiveEffect(name)
@@ -277,6 +285,20 @@ export default function SolarSystem() {
 
   const accentColors = { Earth: '#2979ff', Mars: '#ff3d00', Jupiter: '#ff9800' }
   const surfaceAccent = surfacePlanet ? (accentColors[surfacePlanet] ?? '#aaaaff') : null
+
+  // Format date for display
+  const formatDate = (date) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const month = months[date.getMonth()]
+    const day = date.getDate()
+    const year = date.getFullYear()
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    const seconds = date.getSeconds().toString().padStart(2, '0')
+    return `${month} ${day}, ${year} ${hours}:${minutes}:${seconds}`
+  }
+
+  const displayDate = timeMachineDate || currentTime
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -305,6 +327,29 @@ export default function SolarSystem() {
       </Canvas>
 
       <MarsFlash flash={marsFlash} />
+
+      {/* ── Timer Display (top right) ─────────────────────────────────────────── */}
+      <div style={{
+        position: 'absolute', top: '16px', right: '20px',
+        zIndex: 25, pointerEvents: 'none',
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px',
+      }}>
+        <div style={{
+          fontSize: '9px', letterSpacing: '0.22em',
+          color: timeMachineDate ? 'rgba(52,211,153,0.7)' : 'rgba(148,163,184,0.7)',
+          fontFamily: 'sans-serif',
+        }}>
+          {timeMachineDate ? '⟳ TIME MACHINE' : '🕐 CURRENT TIME'}
+        </div>
+        <div style={{
+          fontSize: '14px', fontWeight: 600, letterSpacing: '0.08em',
+          color: timeMachineDate ? '#6ee7b7' : '#e2e8f0',
+          fontFamily: 'sans-serif',
+          textShadow: timeMachineDate ? '0 0 16px rgba(52,211,153,0.5)' : 'none',
+        }}>
+          {formatDate(displayDate)}
+        </div>
+      </div>
 
       {/* ── Time Machine year HUD ─────────────────────────────────────────── */}
       {timeMachineDate && (
