@@ -157,8 +157,11 @@ const parts = [data.explanation]
 
   const handleTimeMachineChange = (year) => {
     setTmYear(year)
-    // Pass a proper Date (mid-year) so getPlanetAngles() gets valid milliseconds
-    setTimeMachineDate(new Date(year, 6, 1))
+    if (year === currentYear) {
+      setTimeMachineDate(null)
+    } else {
+      setTimeMachineDate(new Date(year, 6, 1))
+    }
   }
 
 
