@@ -1,5 +1,4 @@
-import Link from "next/link";
-import HeroScene from "../components/HeroScene";
+
 import AmbientCosmos from "../components/AmbientCosmos";
 import ConstellationTimeline from "../components/ConstellationTimeline";
 import Header from "../components/Header";

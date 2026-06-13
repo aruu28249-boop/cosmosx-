@@ -127,12 +127,12 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
         if (data.timeline && data.timeline.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
         speak(parts.join('. '))
       }
-    } catch (err) {
+    } catch {
       setError('Could not reach AI. Visual effect is still active.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [onScenarioSelect, speak])
 
   const handleScenario = (s) => {
     setActiveId(s.id)
@@ -180,6 +180,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   // ── Quiz ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const store = loadQuizStore()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStreak(store.streak ?? 0)
   }, [])
 
@@ -519,7 +520,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
                   borderRadius: '50%', animation: 'spin 0.8s linear infinite',
                 }} />
                 <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-                Generating today's question…
+                Generating today&apos;s question…
               </div>
             )}
 

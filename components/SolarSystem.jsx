@@ -68,7 +68,7 @@ function MarsFlash({ flash }) {
 
 function Scene({
   activeEffect, setActiveEffect, multiplier, onPlanetClick,
-  setMarsFlash, selectedPlanet, surfacePlanet, initialAngles, timeMachineAngles,
+  setMarsFlash, surfacePlanet,
 }) {
   const planetPositionsRef = useRef({})
   const marsPositionRef    = useRef({ x: 42, y: 0, z: 0 })
@@ -219,15 +219,6 @@ export default function SolarSystem() {
   const [surfacePlanet,  setSurfacePlanet]  = useState(null)
   const [timeMachineDate, setTimeMachineDateState] = useState(null)
 
-  // Today's real orbital angles (computed once on mount)
-  const initialAngles = useMemo(() => getPlanetAngles(new Date()), [])
-
-  // Angles for whatever date the time machine is set to
-  const timeMachineAngles = useMemo(
-    () => timeMachineDate ? getPlanetAngles(timeMachineDate) : null,
-    [timeMachineDate],
-  )
-
   // Reset camera when exiting surface mode
   const prevSurfaceRef = useRef(null)
   useEffect(() => {
@@ -279,10 +270,7 @@ export default function SolarSystem() {
           multiplier={multiplier}
           onPlanetClick={setSelectedPlanet}
           setMarsFlash={setMarsFlash}
-          selectedPlanet={selectedPlanet}
           surfacePlanet={surfacePlanet}
-          initialAngles={initialAngles}
-          timeMachineAngles={timeMachineAngles}
         />
       </Canvas>
 

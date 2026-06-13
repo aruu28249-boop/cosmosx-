@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -8,62 +8,65 @@ export default function AsteroidBelt({ count = 2000, innerRadius = 50, outerRadi
   const meshRef = useRef()
 
   const beltData = useRef(null)
-  
-  if (!beltData.current) {
-    const positions = new Float32Array(count * 3)
-    const scales = new Float32Array(count * 3)
-    const rotations = new Float32Array(count * 3)
-    const speeds = new Float32Array(count)
-    const phases = new Float32Array(count)
-    const colors = new Float32Array(count * 3)
-    const colorObj = new THREE.Color()
 
-    for (let i = 0; i < count; i++) {
-      // Pseudo-gaussian distribution for distance
-      const r = (Math.random() + Math.random() + Math.random() - 1.5) / 1.5
-      const distance = innerRadius + (outerRadius - innerRadius) * 0.5 + r * (outerRadius - innerRadius) * 0.5
-      
-      // Random angle
-      const angle = Math.random() * Math.PI * 2
-      phases[i] = angle
-      
-      // Initial positions
-      positions[i * 3] = Math.cos(angle) * distance
-      
-      // Bulge in the middle of the belt for Y thickness
-      const centerDist = innerRadius + (outerRadius - innerRadius) * 0.5
-      const thicknessFactor = 1.0 - Math.min(1.0, Math.abs(distance - centerDist) / ((outerRadius - innerRadius) * 0.5))
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 6 * thicknessFactor
-      positions[i * 3 + 2] = Math.sin(angle) * distance
+  useEffect(() => {
+    if (!beltData.current) {
+      const positions = new Float32Array(count * 3)
+      const scales = new Float32Array(count * 3)
+      const rotations = new Float32Array(count * 3)
+      const speeds = new Float32Array(count)
+      const phases = new Float32Array(count)
+      const colors = new Float32Array(count * 3)
+      const colorObj = new THREE.Color()
 
-      // Random non-uniform scales (potato shapes)
-      const scale = 0.04 + Math.random() * 0.12
-      scales[i * 3] = scale * (0.7 + Math.random() * 0.6)
-      scales[i * 3 + 1] = scale * (0.7 + Math.random() * 0.6)
-      scales[i * 3 + 2] = scale * (0.7 + Math.random() * 0.6)
+      for (let i = 0; i < count; i++) {
+        // Pseudo-gaussian distribution for distance
+        const r = (Math.random() + Math.random() + Math.random() - 1.5) / 1.5
+        const distance = innerRadius + (outerRadius - innerRadius) * 0.5 + r * (outerRadius - innerRadius) * 0.5
+        
+        // Random angle
+        const angle = Math.random() * Math.PI * 2
+        phases[i] = angle
+        
+        // Initial positions
+        positions[i * 3] = Math.cos(angle) * distance
+        
+        // Bulge in the middle of the belt for Y thickness
+        const centerDist = innerRadius + (outerRadius - innerRadius) * 0.5
+        const thicknessFactor = 1.0 - Math.min(1.0, Math.abs(distance - centerDist) / ((outerRadius - innerRadius) * 0.5))
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 6 * thicknessFactor
+        positions[i * 3 + 2] = Math.sin(angle) * distance
 
-      // Random initial rotations
-      rotations[i * 3] = Math.random() * Math.PI * 2
-      rotations[i * 3 + 1] = Math.random() * Math.PI * 2
-      rotations[i * 3 + 2] = Math.random() * Math.PI * 2
+        // Random non-uniform scales (potato shapes)
+        const scale = 0.04 + Math.random() * 0.12
+        scales[i * 3] = scale * (0.7 + Math.random() * 0.6)
+        scales[i * 3 + 1] = scale * (0.7 + Math.random() * 0.6)
+        scales[i * 3 + 2] = scale * (0.7 + Math.random() * 0.6)
 
-      // Keplerian speed approximation (further = slower)
-      speeds[i] = (15 / Math.pow(distance, 1.5)) * (0.8 + Math.random() * 0.4)
+        // Random initial rotations
+        rotations[i * 3] = Math.random() * Math.PI * 2
+        rotations[i * 3 + 1] = Math.random() * Math.PI * 2
+        rotations[i * 3 + 2] = Math.random() * Math.PI * 2
 
-      // Asteroid colors: mixture of dark grey, brownish, and slightly metallic
-      const type = Math.random()
-      if (type < 0.5) {
-        colorObj.setHSL(0, 0, 0.1 + Math.random() * 0.1) // C-type: very dark grey
-      } else if (type < 0.8) {
-        colorObj.setHSL(0.08, 0.2 + Math.random() * 0.2, 0.2 + Math.random() * 0.15) // S-type: reddish/brownish
-      } else {
-        colorObj.setHSL(0, 0, 0.3 + Math.random() * 0.1) // M-type: slightly brighter/metallic
+        // Keplerian speed approximation (further = slower)
+        speeds[i] = (15 / Math.pow(distance, 1.5)) * (0.8 + Math.random() * 0.4)
+
+        // Asteroid colors: mixture of dark grey, brownish, and slightly metallic
+        const type = Math.random()
+        if (type < 0.5) {
+          colorObj.setHSL(0, 0, 0.1 + Math.random() * 0.1) // C-type: very dark grey
+        } else if (type < 0.8) {
+          colorObj.setHSL(0.08, 0.2 + Math.random() * 0.2, 0.2 + Math.random() * 0.15) // S-type: reddish/brownish
+        } else {
+          colorObj.setHSL(0, 0, 0.3 + Math.random() * 0.1) // M-type: slightly brighter/metallic
+        }
+        colorObj.toArray(colors, i * 3)
       }
-      colorObj.toArray(colors, i * 3)
-    }
 
-    beltData.current = { positions, scales, rotations, speeds, phases, colors }
-  }
+      beltData.current = { positions, scales, rotations, speeds, phases, colors }
+      setIsInitialized(true)
+    }
+  }, [count, innerRadius, outerRadius])
 
   const frameRef = useRef(0)
 
