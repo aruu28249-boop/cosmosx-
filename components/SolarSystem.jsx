@@ -35,7 +35,7 @@ export function setTimeMachineDate(date) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DEFAULT_CAM_POS    = new THREE.Vector3(0, 50, 110)
-const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 0)
+const DEFAULT_CAM_TARGET = new THREE.Vector3(0, -10, 0)
 
 function PostEffects({ activeEffect, timeMachineFrozen, isReturning }) {
   const isAsteroid = activeEffect === 'asteroid-hit-mars'
@@ -414,8 +414,8 @@ export default function SolarSystem() {
       `}</style>
 
       <Canvas
-        camera={{ position: [0, 50, 110], fov: 55 }}
-        style={{ background: 'transparent', width: '100%', height: '100%' }}
+        camera={{ position: [0, 50, 110], fov: 55, up: [0, 1, 0] }}
+        style={{ background: 'transparent', width: '100%', height: 'calc(100% - 30px)' }}
       >
         <Scene
           activeEffect={activeEffect}

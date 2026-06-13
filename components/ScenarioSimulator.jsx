@@ -471,50 +471,45 @@ const handleCustomSubmit = async () => {
       {/* ── Time Machine popup ───────────────────────────────────────── */}
       {tmOpen && (
         <div style={{
-          position: 'absolute', bottom: '150px', left: '50%',
-          transform: 'translateX(-50%)', pointerEvents: 'auto', width: '380px',
-          padding: '20px 22px', borderRadius: '16px',
-          border: '1.5px solid rgba(52,211,153,0.25)',
-          background: 'rgba(4,8,22,0.92)', backdropFilter: 'blur(20px)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          display: 'flex', flexDirection: 'column', gap: '12px',
-          transition: 'height 0.3s ease',
+          position: 'absolute', right: '24px', top: '80px', pointerEvents: 'auto', width: '300px',
+          padding: '16px 18px', borderRadius: '16px',
+          border: '1px solid rgba(52,211,153,0.22)',
+          background: 'rgba(4,7,20,0.92)', backdropFilter: 'blur(20px)',
+          boxShadow: '0 0 40px rgba(52,211,153,0.08)',
+          display: 'flex', flexDirection: 'column', gap: '10px',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: 'rgba(52,211,153,0.6)', display: 'flex', alignItems: 'center', gap: '5px' }}><RefreshCw size={12} /> TIME MACHINE</span>
-            <span style={{ fontSize: '24px', fontWeight: 700, color: '#6ee7b7' }}>{tmYear}</span>
+            <span style={{ fontSize: '10px', letterSpacing: '0.18em', color: 'rgba(52,211,153,0.55)', display: 'flex', alignItems: 'center', gap: '4px' }}><RefreshCw size={10} /> TIME MACHINE</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#6ee7b7' }}>{tmYear}</span>
           </div>
           <input type="range" min={1900} max={2200} value={tmYear}
             onChange={e => handleTimeMachineChange(Number(e.target.value))}
-            style={{ width: '100%', accentColor: '#34d399', cursor: 'pointer' }}
+            style={{ width: '100%', accentColor: '#34d399', cursor: 'pointer', height: '3px' }}
           />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255,255,255,0.22)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.2)' }}>
             <span>1900</span>
-            <span style={{ color: tmActive ? 'transparent' : 'rgba(52,211,153,0.45)' }}>today</span>
+            <span style={{ color: tmActive ? 'transparent' : 'rgba(52,211,153,0.4)' }}>today</span>
             <span>2200</span>
           </div>
 
           {/* Temporal Event HUD */}
           {tmActive && (
             <div style={{
-              marginTop: '8px', padding: '12px', borderRadius: '10px',
-              background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)',
-              minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              padding: '8px 10px', borderRadius: '8px',
+              background: 'rgba(52,211,153,0.05)', border: '1px solid rgba(52,211,153,0.12)',
+              minHeight: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
               {tmLoading ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(52,211,153,0.6)', fontSize: '11px', letterSpacing: '0.1em' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(52,211,153,0.55)', fontSize: '10px', letterSpacing: '0.1em' }}>
                   <div style={{
-                    width: '12px', height: '12px', border: '1.5px solid rgba(52,211,153,0.3)',
+                    width: '10px', height: '10px', border: '1.5px solid rgba(52,211,153,0.3)',
                     borderTopColor: '#34d399', borderRadius: '50%', animation: 'spin 0.8s linear infinite'
                   }} />
                   SYNCING TIMELINE...
                 </div>
               ) : tmEvent ? (
-                <div style={{ 
-                  color: 'rgba(255,255,255,0.85)', fontSize: '12px', lineHeight: 1.5, 
-                  textShadow: '0 0 10px rgba(52,211,153,0.2)' 
-                }}>
-                  <div style={{ fontSize: '9px', color: '#34d399', letterSpacing: '0.15em', marginBottom: '4px' }}>TEMPORAL LOG:</div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: '8px', color: '#34d399', letterSpacing: '0.15em', marginBottom: '3px' }}>TEMPORAL LOG:</div>
                   {tmEvent}
                 </div>
               ) : null}
@@ -523,9 +518,9 @@ const handleCustomSubmit = async () => {
 
           {tmActive && (
             <button onClick={() => handleTimeMachineChange(currentYear)} style={{
-              padding: '7px', borderRadius: '8px',
-              border: '1px solid rgba(52,211,153,0.3)', background: 'transparent',
-              color: 'rgba(52,211,153,0.7)', fontSize: '12px', cursor: 'pointer', letterSpacing: '0.08em',
+              padding: '5px', borderRadius: '7px',
+              border: '1px solid rgba(52,211,153,0.25)', background: 'transparent',
+              color: 'rgba(52,211,153,0.65)', fontSize: '11px', cursor: 'pointer', letterSpacing: '0.06em',
             }}>‹ Back to Today</button>
           )}
         </div>
@@ -547,8 +542,9 @@ const handleCustomSubmit = async () => {
           background: tmActive ? 'rgba(52,211,153,0.12)' : tmOpen ? 'rgba(255,255,255,0.06)' : 'transparent',
           color: tmActive ? '#6ee7b7' : 'rgba(255,255,255,0.82)',
           fontSize: '13px', letterSpacing: '0.06em', cursor: 'pointer', transition: 'all 0.2s ease',
+          display: 'flex', alignItems: 'center', gap: '6px',
         }}>
-          <><RefreshCw size={13} />{tmActive ? ` ${tmYear}` : ' TIME'}</>
+          <RefreshCw size={13} />{tmActive ? tmYear : 'TIME'}
         </button>
         <button onClick={openQuiz} style={{
           padding: '9px 18px', borderRadius: '22px',
