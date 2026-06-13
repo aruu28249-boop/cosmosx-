@@ -37,6 +37,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   const [error,         setError]         = useState(null)
   const [speaking,      setSpeaking]      = useState(false)
   const audioRef = useRef(null)
+  const utteranceRef = useRef(null)
 
   // ── Custom question ───────────────────────────────────────────────────────
   const [customQ,       setCustomQ]       = useState('')
@@ -49,6 +50,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
 
   // ── Share ─────────────────────────────────────────────────────────────────
   const [copied, setCopied] = useState(false)
+  const [quizCopied, setQuizCopied] = useState(false)
 
   // ── Quiz ──────────────────────────────────────────────────────────────────
   const [quizOpen,    setQuizOpen]    = useState(false)
@@ -127,8 +129,8 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
         if (data.timeline && data.timeline.hundredYears) parts.push('After a hundred years: '   + data.timeline.hundredYears)
         speak(parts.join('. '))
       }
-    } catch {
-      setError('Could not reach AI. Visual effect is still active.')
+} catch (err) {
+      setError(err.message || 'Could not reach AI. Visual effect is still active.')
     } finally {
       setLoading(false)
     }
@@ -140,7 +142,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
     runScenario({ scenarioId: s.id, label: s.label, color: s.color })
   }
 
-  const handleCustomSubmit = async () => {
+const handleCustomSubmit = async () => {
     if (!customQ.trim()) return
     setCustomSending(true)
     const effect = pickEffect(customQ)
@@ -152,7 +154,11 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
 
   const handleTimeMachineChange = (year) => {
     setTmYear(year)
-    setTimeMachineDate(year)
+if (year === currentYear) {
+      setTimeMachineDate(null)
+    } else {
+      setTimeMachineDate(new Date(year, 6, 1))
+    }
   }
 
   const handleReset = () => {
@@ -163,15 +169,27 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   }
 
   const handleShare = () => {
-    const url = new URL(window.location.href)
-    url.search = ''
-    if (activeId && activeId !== 'custom') {
-      url.searchParams.set('s', activeId)
-    } else if (customQ.trim()) {
-      url.searchParams.set('q', encodeURIComponent(customQ.trim()))
+    if (!result) return
+    const lines = []
+    lines.push(`🚀 CosmosX AI Scenario: ${result.label ?? 'Custom'}`)
+    lines.push('')
+    lines.push(result.explanation)
+    if (result.impact?.length) {
+      lines.push('')
+      lines.push('Impact:')
+      result.impact.forEach(pt => lines.push(`• ${pt}`))
     }
-    if (tmYear !== currentYear) url.searchParams.set('year', tmYear)
-    navigator.clipboard.writeText(url.toString()).then(() => {
+    if (result.timeline) {
+      const tl = result.timeline
+      lines.push('')
+      lines.push('Timeline:')
+      if (tl.oneYear)      lines.push(`1 Year: ${tl.oneYear}`)
+      if (tl.tenYears)     lines.push(`10 Years: ${tl.tenYears}`)
+      if (tl.hundredYears) lines.push(`100 Years: ${tl.hundredYears}`)
+    }
+    lines.push('')
+    lines.push(`✨ Explore at: ${window.location.origin}`)
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -221,6 +239,33 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
 
     saveQuizStore({ date: today, answered: true, selected: i, correct: isCorrect, streak: newStreak })
     setStreak(newStreak)
+  }
+
+  const handleQuizShare = () => {
+    if (!quizData || quizSelected === null) return
+    const isCorrect = quizSelected === quizData.correct
+    const letters = ['A', 'B', 'C', 'D']
+    const lines = []
+    lines.push('🪐 CosmosX Daily Space Quiz')
+    lines.push('')
+    lines.push(`Q: ${quizData.question}`)
+    lines.push('')
+    lines.push(`My answer: ${letters[quizSelected]}. ${quizData.options[quizSelected]} ${isCorrect ? '✓' : '✗'}`)
+    if (!isCorrect) {
+      lines.push(`Correct answer: ${letters[quizData.correct]}. ${quizData.options[quizData.correct]}`)
+    }
+    lines.push('')
+    lines.push(quizData.explanation)
+    if (quizData.fact) {
+      lines.push('')
+      lines.push(`✦ ${quizData.fact}`)
+    }
+    lines.push('')
+    lines.push(`Play at: ${window.location.origin}`)
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      setQuizCopied(true)
+      setTimeout(() => setQuizCopied(false), 2000)
+    })
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -574,6 +619,21 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
                           ✦ {quizData.fact}
                         </div>
                       )}
+                      {/* ── Quiz Share button ── */}
+                      <button
+                        onClick={handleQuizShare}
+                        style={{
+                          marginTop: '12px', padding: '6px 14px',
+                          borderRadius: '8px', cursor: 'pointer',
+                          background: 'none',
+                          border: quizCopied ? '1px solid rgba(110,231,183,0.5)' : '1px solid rgba(255,255,255,0.15)',
+                          color: quizCopied ? '#6ee7b7' : 'rgba(255,255,255,0.45)',
+                          fontSize: '10px', letterSpacing: '0.08em', transition: 'all 0.2s',
+                          display: 'flex', alignItems: 'center', gap: '5px',
+                        }}
+                      >
+                        {quizCopied ? '✓ Copied!' : '🔗 Share Result'}
+                      </button>
                     </div>
                   )}
                 </>

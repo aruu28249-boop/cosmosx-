@@ -104,71 +104,112 @@ function MissionNode({ mission }: { mission: Mission }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: false, margin: "-100px" }}
       transition={{ duration: 1, ease: "easeOut" }}
-      className={`flex w-full ${isLeft ? "justify-start" : "justify-end"}`}
+      className="w-full"
     >
-      <div className={`relative flex items-start gap-6 ${isLeft ? "flex-row" : "flex-row-reverse"}`}>
-        {/* Star Node */}
-        <div className="relative mt-2 shrink-0">
-          <div className="w-2 h-2 bg-white rounded-full animate-twinkle shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
-          <div
-            className="absolute inset-0 -m-1 w-4 h-4 rounded-full border border-white/20 animate-ping"
-            style={{ animationDuration: "3s" }}
-          />
+      {/*
+        3-column grid: [card area | spine | card area]
+        The spine column has 0 width — the node dot is positioned
+        absolutely on it so it never moves when the card resizes.
+      */}
+      <div className="grid grid-cols-[1fr_0px_1fr] items-start">
+
+        {/* ── Left slot ── */}
+        <div className={`pr-8 flex ${isLeft ? "justify-end" : ""}`}>
+          {isLeft && (
+            <CardButton mission={mission} open={open} setOpen={setOpen} align="left" />
+          )}
         </div>
 
-        {/* Content card — clickable to reveal the full explanation */}
-        <button
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          className={`group ${isLeft ? "text-left" : "text-right"} max-w-sm rounded-xl border px-5 py-4 transition-all duration-300 cursor-pointer
-            ${open ? "border-indigo-300/40 bg-white/[0.06] shadow-[0_0_30px_rgba(129,140,248,0.18)]" : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]"}`}
-        >
-          <div className={`flex items-baseline gap-3 ${isLeft ? "" : "flex-row-reverse"}`}>
-            <div className="font-heading text-3xl text-white tracking-wider">{mission.title}</div>
-            <div className="text-indigo-200 text-sm font-mono">{mission.date}</div>
+        {/* ── Centre spine node (always centred on the line) ── */}
+        <div className="relative flex justify-center">
+          {/* Dot is pulled out of flow so it doesn't affect column width */}
+          <div className="absolute top-5 -translate-x-1/2 left-0 z-10">
+            <div className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_18px_rgba(255,255,255,0.9)]" />
+            <div
+              className="absolute inset-0 -m-1 w-4.5 h-4.5 rounded-full border border-white/20 animate-ping"
+              style={{ animationDuration: "3s" }}
+            />
           </div>
+        </div>
 
-          <div className={`mt-1 text-[10px] tracking-[0.25em] uppercase text-indigo-300/70 ${isLeft ? "" : "text-right"}`}>
-            {mission.agency}
-          </div>
-
-          <div className="text-white/60 leading-relaxed mt-2">{mission.desc}</div>
-
-          <AnimatePresence initial={false}>
-            {open && (
-              <motion.div
-                key="detail"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                <p className="text-white/75 text-sm leading-relaxed mt-4 pt-4 border-t border-white/10">
-                  {mission.detail}
-                </p>
-                <div className={`flex flex-wrap gap-2 mt-4 ${isLeft ? "justify-start" : "justify-end"}`}>
-                  {mission.facts.map((fact) => (
-                    <span
-                      key={fact}
-                      className="text-[11px] text-indigo-100/80 bg-indigo-400/10 border border-indigo-300/20 rounded-full px-3 py-1"
-                    >
-                      {fact}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div
-            className={`mt-3 text-[10px] tracking-[0.2em] uppercase text-indigo-300/60 transition-colors group-hover:text-indigo-200 ${isLeft ? "" : "text-right"}`}
-          >
-            {open ? "− Close" : "+ Explain this milestone"}
-          </div>
-        </button>
+        {/* ── Right slot ── */}
+        <div className={`pl-8 flex ${!isLeft ? "justify-start" : ""}`}>
+          {!isLeft && (
+            <CardButton mission={mission} open={open} setOpen={setOpen} align="right" />
+          )}
+        </div>
       </div>
     </motion.div>
+  );
+}
+
+function CardButton({
+  mission,
+  open,
+  setOpen,
+  align,
+}: {
+  mission: Mission;
+  open: boolean;
+  setOpen: (fn: (v: boolean) => boolean) => void;
+  align: "left" | "right";
+}) {
+  const isLeft = align === "left";
+  return (
+    <button
+      onClick={() => setOpen((v) => !v)}
+      aria-expanded={open}
+      className={`group w-full max-w-sm rounded-xl border px-5 py-4 transition-all duration-300 cursor-pointer
+        ${isLeft ? "text-left" : "text-right"}
+        ${open
+          ? "border-indigo-300/40 bg-white/[0.06] shadow-[0_0_30px_rgba(129,140,248,0.18)]"
+          : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]"
+        }`}
+    >
+      <div className={`flex items-baseline gap-3 ${isLeft ? "" : "flex-row-reverse"}`}>
+        <div className="font-heading text-3xl text-white tracking-wider">{mission.title}</div>
+        <div className="text-indigo-200 text-sm font-mono">{mission.date}</div>
+      </div>
+
+      <div className={`mt-1 text-[10px] tracking-[0.25em] uppercase text-indigo-300/70 ${isLeft ? "" : "text-right"}`}>
+        {mission.agency}
+      </div>
+
+      <div className="text-white/60 leading-relaxed mt-2">{mission.desc}</div>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="detail"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <p className="text-white/75 text-sm leading-relaxed mt-4 pt-4 border-t border-white/10">
+              {mission.detail}
+            </p>
+            <div className={`flex flex-wrap gap-2 mt-4 ${isLeft ? "justify-start" : "justify-end"}`}>
+              {mission.facts.map((fact) => (
+                <span
+                  key={fact}
+                  className="text-[11px] text-indigo-100/80 bg-indigo-400/10 border border-indigo-300/20 rounded-full px-3 py-1"
+                >
+                  {fact}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div
+        className={`mt-3 text-[10px] tracking-[0.2em] uppercase text-indigo-300/60 transition-colors group-hover:text-indigo-200 ${isLeft ? "" : "text-right"}`}
+      >
+        {open ? "− Close" : "+ Explain this milestone"}
+      </div>
+    </button>
   );
 }
 
@@ -184,38 +225,21 @@ export default function ConstellationTimeline() {
 
   return (
     <div ref={containerRef} className="relative w-full max-w-4xl mx-auto py-32 z-10">
-      <div className="absolute inset-0 pointer-events-none opacity-60">
-        <svg
-          className="w-full h-full drop-shadow-[0_0_12px_rgba(150,200,255,0.7)]"
-          preserveAspectRatio="none"
-          viewBox="0 0 100 100"
-        >
-          <defs>
-            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-              <stop offset="50%" stopColor="rgba(150,200,255,0.9)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-            </linearGradient>
-          </defs>
-          {/* Faint full path so the constellation shape is always hinted */}
-          <path
-            d="M 20 6 C 50 6, 50 21, 80 21 C 50 21, 50 36, 20 36 C 50 36, 50 50, 80 50 C 50 50, 50 64, 20 64 C 50 64, 50 79, 80 79 C 50 79, 50 94, 20 94"
-            fill="transparent"
-            stroke="rgba(150,200,255,0.12)"
-            strokeWidth="0.4"
+
+      {/* ── Vertical spine line (real DOM, always at 50%) ── */}
+      <div className="absolute inset-0 flex justify-center pointer-events-none">
+        <div className="relative w-px h-full">
+          {/* Faint static line */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(150,200,255,0.15)] to-transparent" />
+          {/* Animated fill driven by scroll */}
+          <motion.div
+            className="absolute top-0 left-0 right-0 origin-top bg-gradient-to-b from-transparent via-[rgba(150,200,255,0.7)] to-transparent"
+            style={{ scaleY: pathLength }}
           />
-          {/* Bright path that draws in as the section scrolls into view */}
-          <motion.path
-            d="M 20 6 C 50 6, 50 21, 80 21 C 50 21, 50 36, 20 36 C 50 36, 50 50, 80 50 C 50 50, 50 64, 20 64 C 50 64, 50 79, 80 79 C 50 79, 50 94, 20 94"
-            fill="transparent"
-            stroke="url(#lineGrad)"
-            strokeWidth="0.6"
-            style={{ pathLength }}
-          />
-        </svg>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-28">
+      <div className="flex flex-col gap-24">
         {MISSIONS.map((mission) => (
           <MissionNode key={mission.id} mission={mission} />
         ))}
