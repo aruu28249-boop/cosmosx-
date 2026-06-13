@@ -178,45 +178,62 @@ function Scene({
 }
 
 function InteractionHints() {
-  const [visible, setVisible] = useState(true)
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(false), 7000)
-    return () => clearTimeout(t)
-  }, [])
+  const [open, setOpen] = useState(false)
   return (
-    <div style={{
-      position: 'absolute', bottom: '80px', right: '20px',
-      zIndex: 20, display: 'flex', flexDirection: 'column', gap: '7px',
-      opacity: visible ? 1 : 0, transition: 'opacity 1.2s ease',
-      pointerEvents: 'none',
-    }}>
-      {[
-        { icon: '🖱️', text: 'Drag to rotate' },
-        { icon: '🔍', text: 'Scroll to zoom' },
-        { icon: '🪐', text: 'Click planet for info' },
-      ].map(h => (
-        <div key={h.text} style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '5px 13px', borderRadius: '20px',
-          background: 'rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          color: 'rgba(255,255,255,0.65)', fontSize: '11px',
-          fontFamily: 'sans-serif', letterSpacing: '0.05em', whiteSpace: 'nowrap',
-        }}>
-          <span style={{ fontSize: '13px' }}>{h.icon}</span>{h.text}
-        </div>
-      ))}
+    <div style={{ position: 'absolute', bottom: '80px', right: '20px', zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+      {/* Hint pills */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: '7px',
+        opacity: open ? 1 : 0, transform: open ? 'translateY(0)' : 'translateY(8px)',
+        transition: 'opacity 0.25s ease, transform 0.25s ease',
+        pointerEvents: open ? 'auto' : 'none',
+      }}>
+        {[
+          { icon: '🖱️', text: 'Drag to rotate' },
+          { icon: '🔍', text: 'Scroll to zoom' },
+          { icon: '🪐', text: 'Click planet for info' },
+        ].map(h => (
+          <div key={h.text} style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '5px 13px', borderRadius: '20px',
+            background: 'rgba(255,255,255,0.06)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.9)', fontSize: '11px',
+            fontFamily: 'sans-serif', letterSpacing: '0.05em', whiteSpace: 'nowrap',
+          }}>
+            <span style={{ fontSize: '13px' }}>{h.icon}</span>{h.text}
+          </div>
+        ))}
+      </div>
+
+      {/* i button */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '38px', height: '38px', borderRadius: '50%',
+          border: '1px solid rgba(255,255,255,0.15)',
+          background: 'rgba(5,8,22,0.75)',
+          backdropFilter: 'blur(16px)',
+          color: 'rgba(255,255,255,0.85)',
+          fontSize: '16px', fontStyle: 'italic', fontFamily: 'serif',
+          cursor: 'pointer', transition: 'all 0.2s ease',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        i
+      </button>
     </div>
   )
 }
 
 export default function SolarSystem() {
-  const [selectedPlanet, setSelectedPlanet] = useState(null)
-  const [multiplier,     setMultiplier]     = useState(1)
-  const [activeEffect,   setActiveEffect]   = useState(null)
-  const [marsFlash,      setMarsFlash]      = useState(false)
-  const [surfacePlanet,  setSurfacePlanet]  = useState(null)
+  const [selectedPlanet,    setSelectedPlanet]    = useState(null)
+  const [multiplier,        setMultiplier]        = useState(1)
+  const [activeEffect,      setActiveEffect]      = useState(null)
+  const [marsFlash,         setMarsFlash]         = useState(false)
+  const [surfacePlanet,     setSurfacePlanet]     = useState(null)
+  const [timeMachineDate,   setTimeMachineDateState] = useState(null)
 
   // Reset camera when exiting surface mode
   const prevSurfaceRef = useRef(null)
