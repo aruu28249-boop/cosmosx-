@@ -154,10 +154,12 @@ const handleCustomSubmit = async () => {
 
   const handleTimeMachineChange = (year) => {
     setTmYear(year)
-if (year === currentYear) {
+    if (year === currentYear) {
       setTimeMachineDate(null)
     } else {
-      setTimeMachineDate(new Date(year, 6, 1))
+      // Use current month, day, and time but with the selected year
+      const now = new Date()
+      setTimeMachineDate(new Date(year, now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds()))
     }
   }
 
@@ -208,16 +210,34 @@ if (year === currentYear) {
     quizFetchedRef.current = true
     setQuizLoading(true)
     try {
+      const store = loadQuizStore()
+      const today = new Date().toISOString().slice(0, 10)
+
+      if (store.todayQuizDate === today && store.todayQuizData) {
+        setQuizData(store.todayQuizData)
+        if (store.date === today && store.answered) {
+          setQuizSelected(store.selected)
+        }
+        setQuizLoading(false)
+        return
+      }
+
       const res = await fetch('/api/quiz')
       const data = await res.json()
       setQuizData(data)
 
-      // Restore today's answer if already answered
-      const store = loadQuizStore()
-      const today = new Date().toISOString().slice(0, 10)
-      if (store.date === today && store.answered) {
-        setQuizSelected(store.selected)
+      const updatedStore = {
+        ...store,
+        todayQuizDate: today,
+        todayQuizData: data
       }
+
+      if (store.date === today) {
+        updatedStore.answered = false
+        updatedStore.selected = null
+      }
+
+      saveQuizStore(updatedStore)
     } catch {}
     finally { setQuizLoading(false) }
   }
@@ -233,11 +253,25 @@ if (year === currentYear) {
     // Streak: consecutive correct days
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1)
     const prevDay = yesterday.toISOString().slice(0, 10)
-    const newStreak = isCorrect
-      ? (store.date === prevDay && store.correct ? (store.streak ?? 0) + 1 : 1)
-      : 0
+    let newStreak = 0;
+    if (isCorrect) {
+      if (store.date === prevDay && store.correct) {
+        newStreak = (store.streak ?? 0) + 1;
+      } else if (store.date === today && store.correct) {
+        newStreak = store.streak ?? 1;
+      } else {
+        newStreak = 1;
+      }
+    }
 
-    saveQuizStore({ date: today, answered: true, selected: i, correct: isCorrect, streak: newStreak })
+    saveQuizStore({ 
+      ...store, 
+      date: today, 
+      answered: true, 
+      selected: i, 
+      correct: isCorrect, 
+      streak: newStreak 
+    })
     setStreak(newStreak)
   }
 
