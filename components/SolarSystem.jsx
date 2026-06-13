@@ -37,18 +37,19 @@ export function setTimeMachineDate(date) {
 const DEFAULT_CAM_POS    = new THREE.Vector3(0, 50, 110)
 const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 0)
 
-function PostEffects({ activeEffect, timeMachineFrozen }) {
+function PostEffects({ activeEffect, timeMachineFrozen, isReturning }) {
   const isAsteroid = activeEffect === 'asteroid-hit-mars'
+  const glowing = timeMachineFrozen || isReturning
   return (
     <EffectComposer multisampling={isAsteroid ? 0 : 4}>
       <Bloom
         intensity={
-          timeMachineFrozen ? 2.5
+          glowing ? 2.5
           : activeEffect === 'sun-brighter' ? 2.2
           : isAsteroid ? 0.7
           : 1.5
         }
-        luminanceThreshold={isAsteroid ? 0.7 : (timeMachineFrozen ? 0.3 : 0.55)}
+        luminanceThreshold={isAsteroid ? 0.7 : (glowing ? 0.3 : 0.55)}
         luminanceSmoothing={0.25}
         mipmapBlur={!isAsteroid}
       />
@@ -70,7 +71,7 @@ function MarsFlash({ flash }) {
 
 function Scene({
   activeEffect, setActiveEffect, multiplier, onPlanetClick,
-  setMarsFlash, selectedPlanet, surfacePlanet, initialAngles, timeMachineAngles, timeMachineFrozen,
+  setMarsFlash, selectedPlanet, surfacePlanet, initialAngles, timeMachineAngles, timeMachineFrozen, isReturning,
 }) {
   const planetPositionsRef = useRef({})
   const marsPositionRef    = useRef({ x: 42, y: 0, z: 0 })
@@ -93,28 +94,53 @@ function Scene({
   }, [camera])
 
   // Surface explorer camera animation
+  const prevTargetRef = useRef(new THREE.Vector3())
+  const surfaceTransitionRef = useRef(0)
+
+  useEffect(() => {
+    if (surfacePlanet) {
+      surfaceTransitionRef.current = 1.0
+    }
+  }, [surfacePlanet])
+
   useFrame(() => {
     if (!surfacePlanet) return
     const pos = planetPositionsRef.current[surfacePlanet]
     if (!pos) return
-    const pd = PLANETS.find(p => p.name === surfacePlanet)
-    const size = pd?.size ?? 2
-    const dist = size * 3.2
-
-    // Position camera above-and-behind the planet (away from Sun)
-    const dir = new THREE.Vector3(pos.x, 0, pos.z).normalize()
-    const camTarget = new THREE.Vector3(
-      pos.x + dir.x * dist * 0.6,
-      dist * 0.9,
-      pos.z + dir.z * dist * 0.6,
-    )
+    
     const lookTarget = new THREE.Vector3(pos.x, 0, pos.z)
 
-    camera.position.lerp(camTarget, 0.05)
-    if (orbitRef.current) {
-      orbitRef.current.target.lerp(lookTarget, 0.05)
-      orbitRef.current.update()
+    if (surfaceTransitionRef.current > 0) {
+      surfaceTransitionRef.current -= 0.02
+      if (surfaceTransitionRef.current <= 0) {
+        prevTargetRef.current.copy(lookTarget)
+      }
+
+      const pd = PLANETS.find(p => p.name === surfacePlanet)
+      const size = pd?.size ?? 2
+      const dist = size * 3.2
+
+      const dir = new THREE.Vector3(pos.x, 0, pos.z).normalize()
+      const camTarget = new THREE.Vector3(
+        pos.x + dir.x * dist * 0.6,
+        dist * 0.9,
+        pos.z + dir.z * dist * 0.6,
+      )
+
+      camera.position.lerp(camTarget, 0.05)
+      if (orbitRef.current) {
+        orbitRef.current.target.lerp(lookTarget, 0.05)
+      }
+    } else {
+      // Transition over, now just track the planet while allowing user zoom/pan
+      const delta = new THREE.Vector3().subVectors(lookTarget, prevTargetRef.current)
+      camera.position.add(delta)
+      if (orbitRef.current) {
+        orbitRef.current.target.copy(lookTarget)
+      }
+      prevTargetRef.current.copy(lookTarget)
     }
+    if (orbitRef.current) orbitRef.current.update()
   })
 
   const handleAsteroidImpact = useCallback(() => {
@@ -128,7 +154,7 @@ function Scene({
   return (
     <>
       <ambientLight intensity={0.15} color="#1a2040" />
-      <Stars radius={300} depth={80} count={12000} factor={5} saturation={0.8} fade speed={timeMachineFrozen ? 15.0 : 0.4} />
+      <Stars radius={300} depth={80} count={12000} factor={5} saturation={0.8} fade speed={(timeMachineFrozen || isReturning) ? 15.0 : 0.4} />
       <ShootingStars />
       <OrbitControls
         ref={orbitRef}
@@ -136,8 +162,8 @@ function Scene({
         enableZoom={true}
         enableRotate={true}
         enablePan={false}
-        minDistance={30}
-        maxDistance={240}
+        minDistance={surfacePlanet ? 5 : 30}
+        maxDistance={360}
       />
       <Sun activeEffect={activeEffect} />
       {PLANETS.map((planet) => (
@@ -161,7 +187,7 @@ function Scene({
         />
       ))}
       {PLANETS.map((planet) => (
-        <OrbitRing key={planet.name + '-ring'} radius={planet.orbitRadius} />
+        <OrbitRing key={planet.name + '-ring'} radius={planet.orbitRadius} glowing={!!(timeMachineFrozen || isReturning)} />
       ))}
       <AsteroidBelt
         count={multiplier >= 10 ? 1800 : 3500}
@@ -177,7 +203,7 @@ function Scene({
           onExplosionChange={setControlsLocked}
         />
       )}
-      <PostEffects activeEffect={activeEffect} timeMachineFrozen={timeMachineFrozen} />
+      <PostEffects activeEffect={activeEffect} timeMachineFrozen={timeMachineFrozen} isReturning={isReturning} />
     </>
   )
 }
@@ -239,6 +265,7 @@ export default function SolarSystem() {
   const [marsFlash,      setMarsFlash]      = useState(false)
   const [surfacePlanet,  setSurfacePlanet]  = useState(null)
   const [timeMachineDate, setTimeMachineDateState] = useState(null)
+  const [isReturning, setIsReturning] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
 
   const initialAngles = useMemo(() => getPlanetAngles(new Date()), [])
@@ -268,7 +295,17 @@ export default function SolarSystem() {
 
   useEffect(() => {
     _effectCallback      = (name) => setActiveEffect(name)
-    _timeMachineCallback = (date) => setTimeMachineDateState(date)
+    _timeMachineCallback = (date) => {
+      setTimeMachineDateState(prev => {
+        if (date === null && prev !== null) {
+          setIsReturning(true)
+          setTimeout(() => setIsReturning(false), 9000)
+        } else if (date !== null) {
+          setIsReturning(false)
+        }
+        return date
+      })
+    }
     _resetCallback = () => {
       setActiveEffect(null)
       setSelectedPlanet(null)
@@ -325,6 +362,7 @@ export default function SolarSystem() {
           initialAngles={initialAngles}
           timeMachineAngles={timeMachineAngles}
           timeMachineFrozen={!!timeMachineDate}
+          isReturning={isReturning}
         />
       </Canvas>
 
