@@ -90,7 +90,13 @@ function Scene({
       camera.lookAt(DEFAULT_CAM_TARGET)
     }
     window.__cosmosCameraReset = doReset
-    return () => { delete window.__cosmosCameraReset }
+    // Flag-based reset: checked at the top of every frame so it can't be
+    // overridden by a stale surfacePlanet closure on the same frame.
+    window.__cosmosForceCameraReset = false
+    return () => {
+      delete window.__cosmosCameraReset
+      delete window.__cosmosForceCameraReset
+    }
   }, [camera])
 
   // Surface explorer camera animation
@@ -104,6 +110,18 @@ function Scene({
   }, [surfacePlanet])
 
   useFrame(() => {
+    // Honour a force-reset flag raised by the reset button (clears stale closure issue)
+    if (window.__cosmosForceCameraReset) {
+      window.__cosmosForceCameraReset = false
+      if (orbitRef.current) {
+        orbitRef.current.target.copy(DEFAULT_CAM_TARGET)
+        orbitRef.current.update()
+      }
+      camera.position.copy(DEFAULT_CAM_POS)
+      camera.lookAt(DEFAULT_CAM_TARGET)
+      return
+    }
+
     if (!surfacePlanet) return
     const pos = planetPositionsRef.current[surfacePlanet]
     if (!pos) return
@@ -305,8 +323,11 @@ export default function SolarSystem() {
       setSelectedPlanet(null)
       setSurfacePlanet(null)
       setTimeMachineDateState(null)
-      if (typeof window !== 'undefined' && window.__cosmosCameraReset) {
-        window.__cosmosCameraReset()
+      setIsReturning(false)
+      // Raise the frame-level flag so the NEXT frame resets the camera
+      // regardless of any stale surfacePlanet closure still in flight.
+      if (typeof window !== 'undefined') {
+        window.__cosmosForceCameraReset = true
       }
     }
     return () => {
