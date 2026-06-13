@@ -4,7 +4,7 @@ import * as THREE from 'three'
 
 const dummy = new THREE.Object3D()
 
-export default function AsteroidBelt({ count = 2000, innerRadius = 50, outerRadius = 65, timeMultiplier = 1 }) {
+export default function AsteroidBelt({ count = 2000, innerRadius = 50, outerRadius = 65, timeMultiplier = 1, activeEffect = null }) {
   const meshRef = useRef()
 
   const beltData = useRef(null)
@@ -69,7 +69,7 @@ export default function AsteroidBelt({ count = 2000, innerRadius = 50, outerRadi
 
   const frameRef = useRef(0)
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     if (!meshRef.current || !beltData.current) return
     const { positions, scales, rotations, speeds, phases, colors } = beltData.current
 
@@ -81,13 +81,18 @@ export default function AsteroidBelt({ count = 2000, innerRadius = 50, outerRadi
     const dt = Math.min(delta * skip, 0.05)
     const cappedMult = Math.min(timeMultiplier, 30)
 
+    const jupiterGone = activeEffect === 'jupiter-disappear'
+    const elapsed = clock.elapsedTime
+    const chaosAmount = jupiterGone ? Math.min(elapsed * 0.04, 1.0) : 0
+
     for (let i = 0; i < count; i++) {
-      phases[i] += speeds[i] * dt * cappedMult * 0.8
-      
+      const speedMult = jupiterGone ? (1 + chaosAmount * (0.5 + Math.sin(i * 1.37) * 0.8)) : 1
+      phases[i] += speeds[i] * dt * cappedMult * 0.8 * speedMult
+
       const distance = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2])
-      
+
       dummy.position.x = Math.cos(phases[i]) * distance
-      dummy.position.y = positions[i * 3 + 1]
+      dummy.position.y = positions[i * 3 + 1] + Math.sin(phases[i] * 2.3 + i * 0.73 + elapsed * 0.2) * chaosAmount * 14
       dummy.position.z = Math.sin(phases[i]) * distance
       
       // Add slow rotation

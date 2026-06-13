@@ -19,7 +19,7 @@ function makeRadialTex(stops, size = 512) {
 
 // Self-luminous photosphere — plasma surface, not a lit solid sphere
 const SUN_MAT = new THREE.ShaderMaterial({
-  uniforms: { time: { value: 0 } },
+  uniforms: { time: { value: 0 }, dying: { value: 0 } },
   toneMapped: false,
   vertexShader: /* glsl */`
     varying vec2 vUv;
@@ -34,6 +34,7 @@ const SUN_MAT = new THREE.ShaderMaterial({
   `,
   fragmentShader: /* glsl */`
     uniform float time;
+    uniform float dying;
     varying vec2 vUv;
     varying vec3 vNormal;
     varying vec3 vViewNormal;
@@ -87,6 +88,8 @@ const SUN_MAT = new THREE.ShaderMaterial({
 
       // Self-luminous HDR output for bloom
       col *= 2.8;
+      // Dying sun: shift toward dim deep-red
+      col = mix(col, vec3(0.55, 0.06, 0.01) * 1.2, dying);
       gl_FragColor = vec4(col, 1.0);
     }
   `,
@@ -94,7 +97,7 @@ const SUN_MAT = new THREE.ShaderMaterial({
 
 // 3D corona shell — glows around the sphere in world space (not a flat billboard)
 const CORONA_SHELL_MAT = new THREE.ShaderMaterial({
-  uniforms: { time: { value: 0 } },
+  uniforms: { time: { value: 0 }, dying: { value: 0 } },
   transparent: true,
   depthWrite: false,
   blending: THREE.AdditiveBlending,
@@ -109,13 +112,15 @@ const CORONA_SHELL_MAT = new THREE.ShaderMaterial({
   `,
   fragmentShader: /* glsl */`
     uniform float time;
+    uniform float dying;
     varying vec3 vNormal;
     float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5); }
     void main() {
       float fresnel = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 2.2);
       float flicker = 0.85 + 0.15 * h(vec2(time * 0.4, fresnel * 8.0));
       vec3 col = mix(vec3(1.0, 0.45, 0.05), vec3(1.0, 0.82, 0.35), fresnel);
-      gl_FragColor = vec4(col * 1.6 * flicker, fresnel * 0.55 * flicker);
+      col = mix(col, vec3(0.6, 0.08, 0.02), dying);
+      gl_FragColor = vec4(col * 1.6 * flicker, fresnel * 0.55 * flicker * (1.0 - dying * 0.5));
     }
   `,
 })
@@ -156,7 +161,11 @@ export default function Sun({ activeEffect }) {
   const g1Ref       = useRef()
   const g2Ref       = useRef()
   const g3Ref       = useRef()
+  const light1Ref   = useRef()
+  const light2Ref   = useRef()
   const brighterRef = useRef(1.0)
+  const dyingRef    = useRef(0.0)
+  const flareRef    = useRef(0.0)
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
@@ -164,28 +173,47 @@ export default function Sun({ activeEffect }) {
     CORONA_SHELL_MAT.uniforms.time.value = t
     if (coreRef.current) coreRef.current.rotation.y += 0.0007
 
-    const target = activeEffect === 'sun-brighter' ? 1.7 : 1.0
-    brighterRef.current += (target - brighterRef.current) * 0.02
+    const brighterTarget = activeEffect === 'sun-brighter' ? 1.7 : 1.0
+    brighterRef.current += (brighterTarget - brighterRef.current) * 0.02
     const m = brighterRef.current
+
+    const dyingTarget = activeEffect === 'sun-dies' ? 1.0 : 0.0
+    dyingRef.current += (dyingTarget - dyingRef.current) * 0.012
+    const d = dyingRef.current
+    SUN_MAT.uniforms.dying.value = d
+    CORONA_SHELL_MAT.uniforms.dying.value = d
+
+    const flareTarget = activeEffect === 'solar-flare' ? 1.0 : 0.0
+    flareRef.current += (flareTarget - flareRef.current) * 0.05
+    const f = flareRef.current
+
+    const dyingDim  = 1.0 - d * 0.6
+    const flarePulse = 1.0 + f * (0.6 + Math.sin(t * 5.5) * 0.35)
 
     if (coronaRef.current) {
       const pulse = 1.0 + Math.sin(t * 1.4) * 0.03
-      coronaRef.current.scale.setScalar(1.12 * pulse * m)
+      coronaRef.current.scale.setScalar(1.12 * pulse * m * flarePulse * (1.0 - d * 0.5))
     }
     if (g1Ref.current) {
-      const s = (10.0 + Math.sin(t * 1.1) * 0.3) * m
+      const s = (10.0 + Math.sin(t * 1.1) * 0.3) * m * flarePulse * dyingDim
       g1Ref.current.scale.set(s, s, 1)
-      MAT1.opacity = Math.min(1, (0.7 + Math.sin(t * 0.9) * 0.08) * m)
+      MAT1.opacity = Math.min(1, (0.7 + Math.sin(t * 0.9) * 0.08) * m * flarePulse * dyingDim)
     }
     if (g2Ref.current) {
-      const s = (18.0 + Math.sin(t * 0.7 + 1.0) * 0.5) * m
+      const s = (18.0 + Math.sin(t * 0.7 + 1.0) * 0.5) * m * flarePulse * dyingDim
       g2Ref.current.scale.set(s, s, 1)
-      MAT2.opacity = Math.min(1, (0.55 + Math.sin(t * 0.6) * 0.06) * m)
+      MAT2.opacity = Math.min(1, (0.55 + Math.sin(t * 0.6) * 0.06) * m * flarePulse * dyingDim)
     }
     if (g3Ref.current) {
-      const s = (30.0 + Math.sin(t * 0.45 + 2.0) * 0.8) * m
+      const s = (30.0 + Math.sin(t * 0.45 + 2.0) * 0.8) * m * flarePulse * dyingDim
       g3Ref.current.scale.set(s, s, 1)
-      MAT3.opacity = Math.min(1, (0.4 + Math.sin(t * 0.35) * 0.05) * m)
+      MAT3.opacity = Math.min(1, (0.4 + Math.sin(t * 0.35) * 0.05) * m * flarePulse * dyingDim)
+    }
+    if (light1Ref.current) {
+      light1Ref.current.intensity = 12 * (1 - d * 0.88) * (1 + f * 2.5)
+    }
+    if (light2Ref.current) {
+      light2Ref.current.intensity = 4 * (1 - d * 0.88) * (1 + f * 1.8)
     }
   })
 
@@ -215,8 +243,8 @@ export default function Sun({ activeEffect }) {
       </sprite>
 
       {/* Sunlight */}
-      <pointLight position={[0, 0, 0]} intensity={12} distance={800} decay={1.1} color="#fff0c8" />
-      <pointLight position={[0, 0, 0]} intensity={4}  distance={420} decay={1.6} color="#ff9922" />
+      <pointLight ref={light1Ref} position={[0, 0, 0]} intensity={12} distance={800} decay={1.1} color="#fff0c8" />
+      <pointLight ref={light2Ref} position={[0, 0, 0]} intensity={4}  distance={420} decay={1.6} color="#ff9922" />
     </>
   )
 }

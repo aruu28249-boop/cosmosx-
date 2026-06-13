@@ -5,18 +5,26 @@ import { triggerEffect, resetAll, setTimeMachineDate } from '@/components/SolarS
 import { RotateCcw, RefreshCw, Sparkles, Flame, Link2, Volume2, Square, Check, X, ChevronRight, Diamond, Layers, Globe } from 'lucide-react'
 
 const SCENARIOS = [
-  { id: 'two-moons',        label: 'Two Moons',        question: 'What if Earth had two moons?',        color: '#a78bfa', glow: 'rgba(167,139,250,0.3)' },
-  { id: 'jupiter-disappear', label: 'Jupiter Vanishes', question: 'What if Jupiter disappeared?',         color: '#f59e0b', glow: 'rgba(245,158,11,0.3)'  },
-  { id: 'asteroid-hit-mars', label: 'Asteroid Strikes', question: 'What if an asteroid hit Mars?',        color: '#ef4444', glow: 'rgba(239,68,68,0.3)'   },
-  { id: 'sun-brighter',      label: 'Sun Gets Brighter', question: 'What if the Sun became brighter?',   color: '#fbbf24', glow: 'rgba(251,191,36,0.3)'  },
+  { id: 'two-moons',         label: 'Two Moons',         question: 'What if Earth had two moons?',                      color: '#a78bfa', glow: 'rgba(167,139,250,0.3)' },
+  { id: 'jupiter-disappear', label: 'Jupiter Vanishes',  question: 'What if Jupiter disappeared?',                      color: '#f59e0b', glow: 'rgba(245,158,11,0.3)'  },
+  { id: 'asteroid-hit-mars', label: 'Asteroid Strikes',  question: 'What if an asteroid hit Mars?',                     color: '#ef4444', glow: 'rgba(239,68,68,0.3)'   },
+  { id: 'sun-brighter',      label: 'Sun Gets Brighter', question: 'What if the Sun became brighter?',                  color: '#fbbf24', glow: 'rgba(251,191,36,0.3)'  },
+  { id: 'rogue-planet',      label: 'Rogue Planet',      question: 'What if a rogue planet entered our solar system?',  color: '#7c3aed', glow: 'rgba(124,58,237,0.3)'  },
+  { id: 'sun-dies',          label: 'Sun Dies Out',      question: 'What if the Sun started dying?',                    color: '#dc2626', glow: 'rgba(220,38,38,0.3)'   },
+  { id: 'earth-stops',       label: 'Earth Stops',       question: 'What if Earth stopped rotating?',                   color: '#0ea5e9', glow: 'rgba(14,165,233,0.3)'  },
+  { id: 'solar-flare',       label: 'Solar Flare',       question: 'What if a massive solar flare hit Earth?',          color: '#f97316', glow: 'rgba(249,115,22,0.3)'  },
 ]
 
 function pickEffect(q) {
   const s = q.toLowerCase()
-  if (s.includes('moon') || s.includes('lunar'))                                                           return 'two-moons'
-  if (s.includes('jupiter') || s.includes('vanish') || s.includes('disappear') || s.includes('gas giant')) return 'jupiter-disappear'
-  if (s.includes('asteroid') || s.includes('comet') || s.includes('impact') || s.includes('hit') || s.includes('meteor')) return 'asteroid-hit-mars'
-  if (s.includes('sun') || s.includes('solar') || s.includes('bright') || s.includes('hot') || s.includes('star'))        return 'sun-brighter'
+  if (s.includes('moon') || s.includes('lunar'))                                                                            return 'two-moons'
+  if (s.includes('jupiter') || s.includes('vanish') || s.includes('disappear') || s.includes('gas giant'))                 return 'jupiter-disappear'
+  if (s.includes('asteroid') || s.includes('comet') || s.includes('impact') || s.includes('hit') || s.includes('meteor'))  return 'asteroid-hit-mars'
+  if (s.includes('rogue') || s.includes('interloper') || s.includes('foreign planet') || s.includes('nomad planet'))       return 'rogue-planet'
+  if (s.includes('dies') || s.includes('dying') || s.includes('dead') || s.includes('expan') || s.includes('red giant') || s.includes('collapse') || s.includes('supernova')) return 'sun-dies'
+  if (s.includes('stop') || s.includes('rotat') || s.includes('spin') || s.includes('tidal lock'))                         return 'earth-stops'
+  if (s.includes('flare') || s.includes('cme') || s.includes('coronal') || s.includes('geomagnetic') || s.includes('storm')) return 'solar-flare'
+  if (s.includes('sun') || s.includes('solar') || s.includes('bright') || s.includes('hot') || s.includes('star'))         return 'sun-brighter'
   return null
 }
 
@@ -41,8 +49,9 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   const utteranceRef = useRef(null)
 
   // ── Custom question ───────────────────────────────────────────────────────
-  const [customQ,       setCustomQ]       = useState('')
-  const [customSending, setCustomSending] = useState(false)
+  const [customQ,         setCustomQ]         = useState('')
+  const [customSending,   setCustomSending]   = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   // ── Time machine ──────────────────────────────────────────────────────────
   const currentYear = new Date().getFullYear()
@@ -337,32 +346,93 @@ const handleCustomSubmit = async () => {
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>
+      <style>{`
+        .cosmosx-panel::-webkit-scrollbar { width: 3px; }
+        .cosmosx-panel::-webkit-scrollbar-track { background: transparent; }
+        .cosmosx-panel::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.12);
+          border-radius: 99px;
+          transition: background 0.2s;
+        }
+        .cosmosx-panel::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.28); }
+      `}</style>
 
       {/* ── Left Panel ──────────────────────────────────────────────────── */}
-      <div style={{
-        position: 'absolute', left: '20px', top: '72px',
+      <div className="cosmosx-panel" style={{
+        position: 'absolute', left: '20px', top: '72px', bottom: '100px',
         display: 'flex', flexDirection: 'column', gap: '10px',
         pointerEvents: 'auto', width: '256px',
+        overflowY: 'auto', overflowX: 'hidden',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255,255,255,0.12) transparent',
+        paddingRight: '4px',
       }}>
-        <div style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#ffffff', paddingLeft: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Sparkles size={9} /> AI SCENARIO SIMULATOR
+        <div style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#ffffff', paddingLeft: '2px', display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Sparkles size={9} /> AI SCENARIO SIMULATOR</span>
+          <button onClick={handleReset} title="Reset" style={{
+            width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
+            border: activeId ? '1.5px solid rgba(239,68,68,0.5)' : '1.5px solid rgba(255,255,255,0.12)',
+            background: activeId ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(8px)',
+            color: activeId ? '#fca5a5' : 'rgba(255,255,255,0.45)',
+            cursor: 'pointer', transition: 'all 0.3s ease',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}><RotateCcw size={13} /></button>
         </div>
 
         {/* Ask anything */}
-        <div style={{ display: 'flex', gap: '7px' }}>
-          <input
-            value={customQ}
-            onChange={e => setCustomQ(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') handleCustomSubmit() }}
-            placeholder="What if…"
-            style={{
-              flex: 1, padding: '10px 14px', borderRadius: '12px',
-              border: activeId === 'custom' ? '1.5px solid #60a5fa66' : '1.5px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)',
-              color: 'rgba(255,255,255,0.82)', fontSize: '13px',
-              outline: 'none', fontFamily: 'sans-serif',
-            }}
-          />
+        <div style={{ display: 'flex', gap: '7px', position: 'relative' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <input
+              value={customQ}
+              onChange={e => setCustomQ(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { setShowSuggestions(false); handleCustomSubmit() } }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              placeholder="What if…"
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '10px 14px', borderRadius: showSuggestions ? '12px 12px 0 0' : '12px',
+                border: activeId === 'custom' ? '1.5px solid #60a5fa66' : '1.5px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)',
+                color: 'rgba(255,255,255,0.82)', fontSize: '13px',
+                outline: 'none', fontFamily: 'sans-serif', transition: 'border-radius 0.15s',
+              }}
+            />
+            {showSuggestions && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                background: 'rgba(8,10,22,0.96)', backdropFilter: 'blur(20px)',
+                border: '1.5px solid rgba(255,255,255,0.1)', borderTop: 'none',
+                borderRadius: '0 0 12px 12px', overflow: 'hidden',
+              }}>
+                {[
+                  'What if the Moon crashed into Earth?',
+                  'What if there were no gravity?',
+                  'What if Saturn lost its rings?',
+                  'What if a black hole replaced the Sun?',
+                  'What if Mars had oceans?',
+                  'What if Venus and Earth swapped places?',
+                  'What if the Sun exploded tomorrow?',
+                  'What if Earth had two suns?',
+                ].map((s) => (
+                  <div
+                    key={s}
+                    onMouseDown={() => { setCustomQ(s); setShowSuggestions(false) }}
+                    style={{
+                      padding: '9px 14px', fontSize: '12px', color: 'rgba(255,255,255,0.75)',
+                      cursor: 'pointer', transition: 'background 0.15s', fontFamily: 'sans-serif',
+                      borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    {s}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button onClick={handleCustomSubmit} disabled={!customQ.trim() || customSending} style={{
             padding: '10px 14px', borderRadius: '12px',
             border: '1.5px solid rgba(96,165,250,0.4)',
@@ -374,6 +444,7 @@ const handleCustomSubmit = async () => {
             {customSending ? '…' : '›'}
           </button>
         </div>
+
 
         {SCENARIOS.map(s => {
           const isActive = s.id === activeId
@@ -395,15 +466,6 @@ const handleCustomSubmit = async () => {
           )
         })}
 
-        <button onClick={handleReset} title="Reset" style={{
-          alignSelf: 'flex-start', width: '42px', height: '42px', borderRadius: '50%',
-          border: activeId ? '1.5px solid rgba(239,68,68,0.5)' : '1.5px solid rgba(255,255,255,0.1)',
-          background: activeId ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
-          backdropFilter: 'blur(12px)',
-          color: activeId ? '#fca5a5' : 'rgba(255,255,255,0.6)',
-          cursor: 'pointer', transition: 'all 0.3s ease',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}><RotateCcw size={18} /></button>
       </div>
 
       {/* ── Time Machine popup ───────────────────────────────────────── */}

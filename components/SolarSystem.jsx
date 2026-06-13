@@ -40,20 +40,69 @@ const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 0)
 function PostEffects({ activeEffect, timeMachineFrozen, isReturning }) {
   const isAsteroid = activeEffect === 'asteroid-hit-mars'
   const glowing = timeMachineFrozen || isReturning
+
+  const bloomIntensity =
+    glowing                              ? 2.5
+    : activeEffect === 'solar-flare'    ? 3.8
+    : activeEffect === 'sun-brighter'   ? 2.8
+    : activeEffect === 'rogue-planet'   ? 1.9
+    : activeEffect === 'sun-dies'       ? 0.5
+    : activeEffect === 'earth-stops'    ? 1.2
+    : isAsteroid                        ? 0.7
+    : 1.5
+
+  const luminanceThreshold =
+    activeEffect === 'sun-dies'         ? 0.75
+    : activeEffect === 'solar-flare'   ? 0.35
+    : isAsteroid                        ? 0.7
+    : glowing                           ? 0.3
+    : 0.55
+
   return (
     <EffectComposer multisampling={isAsteroid ? 0 : 4}>
       <Bloom
-        intensity={
-          glowing ? 2.5
-          : activeEffect === 'sun-brighter' ? 2.2
-          : isAsteroid ? 0.7
-          : 1.5
-        }
-        luminanceThreshold={isAsteroid ? 0.7 : (glowing ? 0.3 : 0.55)}
+        intensity={bloomIntensity}
+        luminanceThreshold={luminanceThreshold}
         luminanceSmoothing={0.25}
         mipmapBlur={!isAsteroid}
       />
     </EffectComposer>
+  )
+}
+
+function RoguePlanetObject({ active }) {
+  const ref = useRef()
+  const tRef = useRef(-1.5)
+
+  useFrame((_, delta) => {
+    if (!ref.current) return
+    if (active) {
+      tRef.current = Math.min(tRef.current + delta * 0.055, 2.8)
+    } else {
+      tRef.current = -1.5
+    }
+    const p = tRef.current
+    // Hyperbolic trajectory through the solar system
+    const rx = 22 * Math.cosh(p)
+    const rz = 68 * Math.sinh(p)
+    const cos40 = Math.cos(0.7), sin40 = Math.sin(0.7)
+    ref.current.position.x = rx * cos40 - rz * sin40
+    ref.current.position.z = rx * sin40 + rz * cos40
+    ref.current.position.y = Math.sin(p * 1.8) * 14
+    ref.current.rotation.y += delta * 0.14
+    ref.current.visible = active
+  })
+
+  return (
+    <group ref={ref} visible={false}>
+      <mesh>
+        <sphereGeometry args={[6, 32, 32]} />
+        <meshStandardMaterial color="#120520" emissive="#3d0060" emissiveIntensity={0.8} roughness={0.82} />
+      </mesh>
+      <sprite scale={[22, 22, 1]}>
+        <spriteMaterial color="#7c3aed" transparent opacity={0.10} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </sprite>
+    </group>
   )
 }
 
@@ -213,7 +262,9 @@ function Scene({
         innerRadius={48}
         outerRadius={63}
         timeMultiplier={multiplier}
+        activeEffect={activeEffect}
       />
+      <RoguePlanetObject active={activeEffect === 'rogue-planet'} />
       {activeEffect === 'asteroid-hit-mars' && (
         <Asteroid
           targetRef={marsPositionRef}
@@ -431,6 +482,36 @@ export default function SolarSystem() {
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
           background: 'radial-gradient(circle at 50% 50%, rgba(255,240,180,0.18) 0%, rgba(255,200,80,0.08) 40%, transparent 70%)',
           animation: 'sunPulse 2s ease-in-out infinite',
+        }} />
+      )}
+
+      {activeEffect === 'solar-flare' && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
+          background: 'radial-gradient(circle at 50% 45%, rgba(255,130,10,0.32) 0%, rgba(255,60,0,0.14) 35%, transparent 65%)',
+          animation: 'sunPulse 0.7s ease-in-out infinite',
+        }} />
+      )}
+
+      {activeEffect === 'sun-dies' && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
+          background: 'radial-gradient(circle at 50% 45%, rgba(50,5,0,0.22) 0%, rgba(10,0,0,0.12) 40%, rgba(2,0,8,0.35) 100%)',
+          animation: 'sunPulse 4.5s ease-in-out infinite',
+        }} />
+      )}
+
+      {activeEffect === 'rogue-planet' && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
+          background: 'radial-gradient(ellipse at 68% 28%, rgba(90,0,140,0.18) 0%, transparent 52%)',
+        }} />
+      )}
+
+      {activeEffect === 'earth-stops' && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 4,
+          background: 'linear-gradient(90deg, rgba(0,8,25,0.22) 0%, transparent 28%, transparent 72%, rgba(0,8,25,0.12) 100%)',
         }} />
       )}
 
