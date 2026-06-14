@@ -457,6 +457,8 @@ export default function ConstellationTimeline() {
               ? `AI found: ${aiResult?.title}`
               : isAiDuplicate
               ? "Already shown above ↑"
+              : lastQueriedRef.current === searchQuery.trim() && !aiResult
+              ? "No cosmic records found"
               : "AI will search all of space history"}
           </p>
         )}
