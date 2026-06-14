@@ -160,12 +160,6 @@ export default function AboutPage() {
     crewCount: 45
   });
 
-  const incrementStat = (type: "simulations" | "starSystems" | "crewCount") => {
-    setStats(prev => ({
-      ...prev,
-      [type]: prev[type] + (type === "simulations" ? Math.floor(Math.random() * 5) + 1 : 1)
-    }));
-  };
 
   // Run Quiz
   const handleQuizAnswer = (value: string) => {
@@ -237,15 +231,14 @@ export default function AboutPage() {
         {/* Interactive Realtime Counter Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-16">
           {[
-            { label: "VIRTUAL UNIVERSES SIMULATED", val: stats.simulations.toLocaleString(), type: "simulations" as const },
-            { label: "CELESTIAL CORRIDORS MAPPED", val: stats.starSystems.toString(), type: "starSystems" as const },
-            { label: "CREW UNITS IN SYSTEMS", val: stats.crewCount.toString(), type: "crewCount" as const }
+            { label: "VIRTUAL UNIVERSES SIMULATED", val: stats.simulations.toLocaleString() },
+            { label: "CELESTIAL CORRIDORS MAPPED",  val: stats.starSystems.toString() },
+            { label: "CREW UNITS IN SYSTEMS",        val: stats.crewCount.toString() }
           ].map((stat) => (
             <motion.div
               key={stat.label}
               whileHover={{ scale: 1.02 }}
-              onClick={() => incrementStat(stat.type)}
-              className="bg-[#0b0c16]/70 border border-indigo-500/20 rounded-xl p-6 backdrop-blur-md cursor-pointer relative overflow-hidden group transition-all duration-300 hover:border-indigo-400/50 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
+              className="bg-[#0b0c16]/70 border border-indigo-500/20 rounded-xl p-6 backdrop-blur-md cursor-default relative overflow-hidden group transition-all duration-300 hover:border-indigo-400/50 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
             >
               {/* Scanline Effect */}
               <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.02)_50%,transparent_50%)] bg-[length:100%_4px] pointer-events-none opacity-20"></div>
@@ -253,9 +246,6 @@ export default function AboutPage() {
               <span className="text-[10px] tracking-[0.2em] text-white/40 block mb-2 font-mono">{stat.label}</span>
               <div className="text-3xl font-heading font-bold text-white tracking-widest group-hover:text-indigo-300 transition-colors">
                 {stat.val}
-              </div>
-              <div className="text-[9px] text-indigo-400/60 mt-2 tracking-widest font-mono opacity-0 group-hover:opacity-100 transition-opacity">
-                ▲ SIMULATE SIGNAL INPUT
               </div>
             </motion.div>
           ))}
