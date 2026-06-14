@@ -3,12 +3,26 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
-import { 
-  Cpu, 
-  Users, 
-  Send, 
-  Terminal, 
-  Compass, 
+import StarfieldBackground from "@/components/StarfieldBackground";
+
+// Placeholder MissionStatement component
+const MissionStatement = () => (
+  <section className="py-12 text-center">
+    <h2 className="text-3xl font-heading text-white mb-4">Our Mission</h2>
+    <p className="max-w-2xl mx-auto text-white/70">
+      To explore the cosmos and share the wonder of space with everyone.
+    </p>
+  </section>
+);
+
+// Placeholder CometCursor component (currently no visual effect)
+const CometCursor = () => null;
+import {
+  Cpu,
+  Users,
+  Send,
+  Terminal,
+  Compass,
   Database,
   Sparkles,
   ChevronRight,
