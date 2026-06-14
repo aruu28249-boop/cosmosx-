@@ -33,6 +33,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[#050816] text-white font-sans overflow-x-hidden">
         <GlobalCosmos />
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
