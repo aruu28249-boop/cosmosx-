@@ -68,7 +68,7 @@ A sci-fi themed contact form that animates an "uplink" progress bar on submissio
 ### 1. Clone
 
 ```bash
-git clone https://github.com/<your-username>/cosmosx.git
+git clone (https://github.com/aruu28249-boop/cosmosx-.git)
 cd cosmosx-
 ```
 
