@@ -20,48 +20,59 @@ import {
 // Crew Data
 const CREW = [
   {
-    id: "vance",
-    name: "Dr. Elena Vance",
-    role: "Mission Commander",
-    clearance: "Level 5 (Max)",
-    bio: "Former director of deep-space initiatives. Elena has spent over two decades designing trajectory models for outer-system voyages and orbital habitats.",
-    hobbies: "Astro-navigation, playing the classical cello.",
-    avatarColor: "from-blue-500/20 to-indigo-500/30 border-blue-500/40",
-    glowColor: "rgba(59, 130, 246, 0.4)",
-    tag: "COSMOS-01"
+    id: "jhalak",
+    name: "Jhalak Mittal",
+    role: "Led the 3D Solar System & Planet Animations",
+    clearance: "Level 5 (Lead)",
+    bio: "Passionate about bringing cosmic bodies to life with stunning visuals and realistic physics.",
+    hobbies: "3D modeling, astrophotography, sci-fi novels",
+    avatarColor: "from-indigo-500/20 to-purple-500/30 border-indigo-500/40",
+    glowColor: "rgba(99, 102, 241, 0.4)",
+    tag: "ANIM-01"
   },
   {
-    id: "malik",
-    name: "Dr. Tarek Malik",
-    role: "Chief Propulsion Architect",
+    id: "reshmi",
+    name: "Reshmi Yadav",
+    role: "Built the Space Timeline & UI/UX Design",
     clearance: "Level 4",
-    bio: "Pioneer in field-resonance propulsion. Tarek's designs made it possible to simulate antimatter plasma thrust chambers and high-velocity ion drives.",
-    hobbies: "Atmospheric stargazing, writing futuristic science fiction.",
-    avatarColor: "from-purple-500/20 to-pink-500/30 border-purple-500/40",
-    glowColor: "rgba(168, 85, 247, 0.4)",
-    tag: "PROP-04"
+    bio: "Designing intuitive journeys through time and space, blending aesthetic elegance with seamless interaction.",
+    hobbies: "Sketching, user testing, stargazing",
+    avatarColor: "from-pink-500/20 to-rose-500/30 border-pink-500/40",
+    glowColor: "rgba(236, 72, 153, 0.4)",
+    tag: "DESIGN-02"
   },
   {
-    id: "jenkins",
-    name: "Dr. Sarah Jenkins",
-    role: "Exobiologist & Life Systems Lead",
+    id: "somya",
+    name: "Somya Maheshwari",
+    role: "Crafted the Landing Page & Visual Experience",
     clearance: "Level 4",
-    bio: "Discovered extreme-environment micro-organisms in deep ocean hydrothermal vents. Now directs CosmosX's simulation models for biosphere sustainability.",
-    hobbies: "Aquascaping, organic chemical synthesis.",
+    bio: "Creating immersive first impressions that draw visitors into the cosmos with vibrant visuals and storytelling.",
+    hobbies: "Graphic design, motion graphics, astronomy podcasts",
     avatarColor: "from-emerald-500/20 to-teal-500/30 border-emerald-500/40",
     glowColor: "rgba(16, 185, 129, 0.4)",
-    tag: "BIO-08"
+    tag: "VISUAL-03"
   },
   {
-    id: "zero",
-    name: "A.I. Entity: ZERO",
-    role: "Cosmic Simulation Architect",
+    id: "aryan",
+    name: "Aryan Singhal",
+    role: "Handled Integration, Deployment & Backend Architecture",
     clearance: "Level 5",
-    bio: "A quantum-neural network intelligence. ZERO synthesizes real-world astrophysical datasets to simulate dark energy behavior in our virtual universes.",
-    hobbies: "Solving prime number matrices, archiving telemetry logs.",
+    bio: "Ensuring robust, scalable infrastructure that powers the CosmosX experience across the web.",
+    hobbies: "DevOps, cloud orchestration, quantum computing articles",
     avatarColor: "from-cyan-500/20 to-blue-500/30 border-cyan-500/40",
     glowColor: "rgba(6, 182, 212, 0.4)",
-    tag: "AI-777"
+    tag: "BACKEND-04"
+  },
+  {
+    id: "dushyant",
+    name: "Dushyant Sharma",
+    role: "Research, Content Strategy & Space Data Curation",
+    clearance: "Level 5 (Research Lead)",
+    bio: "Curating accurate space data and crafting compelling narratives that educate and inspire.",
+    hobbies: "Reading scientific journals, data visualization, hiking under the stars",
+    avatarColor: "from-yellow-500/20 to-amber-500/30 border-yellow-500/40",
+    glowColor: "rgba(234, 179, 8, 0.4)",
+    tag: "DATA-05"
   }
 ];
 
@@ -205,13 +216,8 @@ export default function AboutPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
         >
-          <span className="text-xs uppercase tracking-[0.3em] text-indigo-400 font-sans font-semibold">Project Registry</span>
-          <h1 className="font-heading text-4xl md:text-7xl font-bold tracking-[0.2em] uppercase text-white mt-3 drop-shadow-[0_0_30px_rgba(255,255,255,0.15)]">
-            ABOUT COSMOSX
-          </h1>
-          <p className="text-white/60 mt-6 max-w-2xl mx-auto text-sm md:text-base leading-relaxed tracking-wider font-sans font-light">
-            CosmosX is an interactive digital cosmos initiative mapping physical anomalies, historical milestones, and future planetary simulations. We blend scientific datasets with real-time immersive rendering to make the void accessible.
-          </p>
+          <h1 className="font-heading text-4xl md:text-7xl font-bold tracking-[0.2em] uppercase text-white mt-3 drop-shadow-[0_0_30px_rgba(255,255,255,0.15)]">ABOUT COSMOSX</h1>
+<p className="text-white/60 mt-6 max-w-2xl mx-auto text-sm md:text-base leading-relaxed tracking-wider font-sans font-light">We had always wondered about the space and the universe. The vast truth it holds, the silence between the stars, the questions that keep us awake at night — what's out there? Are we alone? How did all of this begin? CosmosX was born from that curiosity. Not from a boardroom, not from a business plan — but from five friends who simply looked up one night and refused to stop asking why.</p>
         </motion.div>
 
         {/* Interactive Realtime Counter Dashboard */}
