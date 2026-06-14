@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Search, Compass, Sparkles } from "lucide-react";
 
@@ -95,57 +95,7 @@ const MISSIONS: Mission[] = [
   },
 ];
 
-function MissionNode({ mission }: { mission: Mission }) {
-  const [open, setOpen] = useState(false);
-  const isLeft = mission.align === "left";
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      viewport={{ once: false, margin: "-100px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="w-full"
-    >
-      {/*
-        3-column grid: [card area | spine | card area]
-        The spine column has 0 width -the node dot is positioned
-        absolutely on it so it never moves when the card resizes.
-      */}
-      <div className="grid grid-cols-[1fr_0px_1fr] items-start">
-
-        {/* ── Left slot ── */}
-        <div className={`pr-8 flex ${isLeft ? "justify-end" : ""}`}>
-          {isLeft && (
-            <CardButton mission={mission} open={open} setOpen={setOpen} align="left" />
-          )}
-        </div>
-
-        {/* ── Centre spine node (always centred on the line) ── */}
-        <div className="relative flex justify-center">
-          {/* Dot is pulled out of flow so it doesn't affect column width */}
-          <div className="absolute top-5 -translate-x-1/2 left-0 z-10">
-            <div className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_18px_rgba(255,255,255,0.9)]" />
-            <div
-              className="absolute inset-0 -m-1 w-4.5 h-4.5 rounded-full border border-white/20 animate-ping"
-              style={{ animationDuration: "3s" }}
-            />
-          </div>
-        </div>
-
-        {/* ── Right slot ── */}
-        <div className={`pl-8 flex ${!isLeft ? "justify-start" : ""}`}>
-          {!isLeft && (
-            <CardButton mission={mission} open={open} setOpen={setOpen} align="right" />
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
+// ── CardButton (hardcoded milestone, with AI explanation on open) ─────────────
 function CardButton({
   mission,
   open,
@@ -158,36 +108,10 @@ function CardButton({
   align: "left" | "right";
 }) {
   const isLeft = align === "left";
-  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-
-  const handleToggle = async () => {
-    const willOpen = !open;
-    setOpen((v) => !v);
-    // Fetch AI explanation on first open
-    if (willOpen && !aiExplanation && !aiLoading) {
-      setAiLoading(true);
-      try {
-        const res = await fetch('/api/scenario', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            scenario: `${mission.title} (${mission.date}): ${mission.desc} — ${mission.detail}`,
-          }),
-        });
-        const data = await res.json();
-        setAiExplanation(data?.explanation ?? null);
-      } catch {
-        setAiExplanation(null);
-      } finally {
-        setAiLoading(false);
-      }
-    }
-  };
 
   return (
     <button
-      onClick={handleToggle}
+      onClick={() => setOpen((v) => !v)}
       aria-expanded={open}
       className={`group w-full max-w-sm rounded-xl border px-5 py-4 transition-all duration-300 cursor-pointer
         ${isLeft ? "text-left" : "text-right"}
@@ -221,26 +145,7 @@ function CardButton({
               {mission.detail}
             </p>
 
-            {/* AI explanation section */}
-            <div className={`mt-4 pt-3 border-t border-indigo-400/10`}>
-              <div className={`flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase text-indigo-300/60 mb-2 ${isLeft ? "" : "justify-end"}`}>
-                <Sparkles className="w-2.5 h-2.5" />
-                AI Analysis
-              </div>
-              {aiLoading ? (
-                <div className={`flex items-center gap-2 text-indigo-300/50 text-xs ${isLeft ? "" : "justify-end"}`}>
-                  <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  Consulting the cosmos…
-                </div>
-              ) : aiExplanation ? (
-                <p className={`text-indigo-100/70 text-xs leading-relaxed italic ${isLeft ? "" : "text-right"}`}>
-                  {aiExplanation}
-                </p>
-              ) : null}
-            </div>
+
 
             <div className={`flex flex-wrap gap-2 mt-4 ${isLeft ? "justify-start" : "justify-end"}`}>
               {mission.facts.map((fact) => (
@@ -259,16 +164,149 @@ function CardButton({
       <div
         className={`mt-3 text-[10px] tracking-[0.2em] uppercase text-indigo-300/60 transition-colors group-hover:text-indigo-200 ${isLeft ? "" : "text-right"}`}
       >
-        {open ? "− Close" : "+ Explain this milestone"}
+        {open ? "− Close" : "+ View details"}
       </div>
     </button>
   );
 }
 
+// ── MissionNode (timeline spine layout wrapper) ───────────────────────────────
+function MissionNode({ mission }: { mission: Mission }) {
+  const [open, setOpen] = useState(false);
+  const isLeft = mission.align === "left";
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      viewport={{ once: false, margin: "-100px" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="w-full"
+    >
+      {/*
+        3-column grid: [card area | spine | card area]
+        The spine column has 0 width — the node dot is positioned
+        absolutely on it so it never moves when the card resizes.
+      */}
+      <div className="grid grid-cols-[1fr_0px_1fr] items-start">
+
+        {/* ── Left slot ── */}
+        <div className={`pr-8 flex ${isLeft ? "justify-end" : ""}`}>
+          {isLeft && (
+            <CardButton mission={mission} open={open} setOpen={setOpen} align="left" />
+          )}
+        </div>
+
+        {/* ── Centre spine node (always centred on the line) ── */}
+        <div className="relative flex justify-center">
+          <div className="absolute top-5 -translate-x-1/2 left-0 z-10">
+            <div className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_18px_rgba(255,255,255,0.9)]" />
+            <div
+              className="absolute inset-0 -m-1 w-4.5 h-4.5 rounded-full border border-white/20 animate-ping"
+              style={{ animationDuration: "3s" }}
+            />
+          </div>
+        </div>
+
+        {/* ── Right slot ── */}
+        <div className={`pl-8 flex ${!isLeft ? "justify-start" : ""}`}>
+          {!isLeft && (
+            <CardButton mission={mission} open={open} setOpen={setOpen} align="right" />
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── AiMissionCard (AI-fetched result, centred, cyan-themed) ───────────────────
+function AiMissionCard({ mission }: { mission: Omit<Mission, "align"> }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.45, ease: "easeOut" }}
+      className="w-full flex justify-center"
+    >
+      <div className="relative w-full max-w-sm">
+        {/* AI badge */}
+        <div className="absolute -top-3 left-4 z-10 flex items-center gap-1.5 bg-indigo-500/15 border border-indigo-400/35 rounded-full px-2.5 py-0.5 backdrop-blur-sm">
+          <Sparkles className="w-2.5 h-2.5 text-indigo-400" />
+          <span className="text-[9px] tracking-[0.15em] uppercase text-indigo-300/80 font-mono">AI Result</span>
+        </div>
+
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className={`group w-full rounded-xl border px-5 py-4 text-left transition-all duration-300 cursor-pointer
+            ${open
+              ? "border-indigo-300/40 bg-white/[0.06] shadow-[0_0_30px_rgba(129,140,248,0.18)]"
+              : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]"
+            }`}
+        >
+          <div className="flex items-baseline gap-3">
+            <div className="font-heading text-3xl text-white tracking-wider">{mission.title}</div>
+            <div className="text-indigo-200 text-sm font-mono">{mission.date}</div>
+          </div>
+
+          <div className="mt-1 text-[10px] tracking-[0.25em] uppercase text-indigo-300/70">
+            {mission.agency}
+          </div>
+
+          <div className="text-white/60 leading-relaxed mt-2">{mission.desc}</div>
+
+          <AnimatePresence initial={false}>
+            {open && (
+              <motion.div
+                key="detail"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <p className="text-white/75 text-sm leading-relaxed mt-4 pt-4 border-t border-indigo-400/10">
+                  {mission.detail}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {mission.facts.map((fact) => (
+                    <span
+                      key={fact}
+                      className="text-[11px] text-indigo-100/80 bg-indigo-400/10 border border-indigo-300/20 rounded-full px-3 py-1"
+                    >
+                      {fact}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="mt-3 text-[10px] tracking-[0.2em] uppercase text-indigo-300/50 transition-colors group-hover:text-indigo-200">
+            {open ? "− Close" : "+ View details"}
+          </div>
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Main ConstellationTimeline ────────────────────────────────────────────────
 export default function ConstellationTimeline() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedAgency, setSelectedAgency] = useState("All");
+
+  // AI search state
+  const [aiResult, setAiResult] = useState<Omit<Mission, "align"> | null>(null);
+  const [aiSearchLoading, setAiSearchLoading] = useState(false);
+  const aiDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastQueriedRef = useRef("");
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -277,31 +315,99 @@ export default function ConstellationTimeline() {
 
   const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
-  const agencies = ["All", "NASA", "USSR", "ISRO", "ESA", "International"];
-
   const filteredMissions = MISSIONS.filter((mission) => {
-    const matchesAgency =
-      selectedAgency === "All" ||
-      mission.agency.toLowerCase().includes(selectedAgency.toLowerCase());
-    
-    const matchesSearch =
-      mission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mission.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mission.detail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mission.agency.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mission.date.includes(searchQuery);
-
-    return matchesAgency && matchesSearch;
+    const q = searchQuery.toLowerCase();
+    return (
+      mission.title.toLowerCase().includes(q) ||
+      mission.desc.toLowerCase().includes(q) ||
+      mission.detail.toLowerCase().includes(q) ||
+      mission.agency.toLowerCase().includes(q) ||
+      mission.date.includes(q)
+    );
   });
+
+  // AI-result is a duplicate if a hardcoded card already shows that title
+  const isAiDuplicate =
+    aiResult != null &&
+    filteredMissions.some(
+      (m) =>
+        m.title.toLowerCase().includes(aiResult.title.toLowerCase()) ||
+        aiResult.title.toLowerCase().includes(m.title.toLowerCase())
+    );
+  const showAiResult = aiResult != null && !isAiDuplicate;
+
+  // ── AI search trigger ────────────────────────────────────────────────────
+  const triggerAiSearch = useCallback(async (query: string) => {
+    const q = query.trim();
+    if (!q || q === lastQueriedRef.current) return;
+    lastQueriedRef.current = q;
+    setAiSearchLoading(true);
+    setAiResult(null);
+    try {
+      const res = await fetch("/api/timeline-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q }),
+      });
+      const data = await res.json();
+      if (data?.title && data?.date) {
+        setAiResult({
+          id: "ai-result",
+          title: data.title,
+          date: data.date,
+          agency: data.agency ?? "",
+          desc: data.desc ?? "",
+          detail: data.detail ?? "",
+          facts: Array.isArray(data.facts) ? data.facts : [],
+        });
+      } else {
+        setAiResult(null);
+      }
+    } catch {
+      setAiResult(null);
+    } finally {
+      setAiSearchLoading(false);
+    }
+  }, []);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (aiDebounceRef.current) clearTimeout(aiDebounceRef.current);
+    if (!value.trim()) {
+      setAiResult(null);
+      setAiSearchLoading(false);
+      lastQueriedRef.current = "";
+      return;
+    }
+    // Auto-trigger AI after 850 ms of no typing
+    aiDebounceRef.current = setTimeout(() => triggerAiSearch(value), 850);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      if (aiDebounceRef.current) clearTimeout(aiDebounceRef.current);
+      triggerAiSearch(searchQuery);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setAiResult(null);
+    setAiSearchLoading(false);
+    lastQueriedRef.current = "";
+    if (aiDebounceRef.current) clearTimeout(aiDebounceRef.current);
+  };
 
   // Calculate some simple stats
   const years = filteredMissions.map((m) => parseInt(m.date)).filter((y) => !isNaN(y));
   const spanYears = years.length > 0 ? `${Math.min(...years)} – ${Math.max(...years)}` : "N/A";
   const uniqueAgencies = new Set(filteredMissions.flatMap((m) => m.agency.split(" / "))).size;
 
+  const hasAiSection = searchQuery.trim().length > 0 && (aiSearchLoading || showAiResult);
+
   return (
     <div ref={containerRef} className="relative w-full max-w-4xl mx-auto py-12 px-4 z-10">
-      
+
       {/* ── Search & Filter Controls ── */}
       <div className="mb-16 flex flex-col gap-6 p-6 md:p-8 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl relative overflow-hidden">
         {/* Subtle decorative glow */}
@@ -316,69 +422,53 @@ export default function ConstellationTimeline() {
             </span>
             <input
               type="text"
-              placeholder="Search cosmic milestones (e.g. Sputnik, Apollo, 2021)..."
+              placeholder="Search any mission — Apollo, Perseverance, Vostok, Mars… ⏎ Enter for instant AI search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/10 focus:border-indigo-400/50 hover:border-white/20 text-white rounded-xl pl-10 pr-4 py-3 text-sm transition-all focus:outline-none focus:ring-1 focus:ring-indigo-400/30 font-sans tracking-wide placeholder-white/30"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              className="w-full bg-white/[0.04] border border-white/10 focus:border-indigo-400/50 hover:border-white/20 text-white rounded-xl pl-10 pr-16 py-3 text-sm transition-all focus:outline-none focus:ring-1 focus:ring-indigo-400/30 font-sans tracking-wide placeholder-white/25"
             />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery("")} 
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white/80 transition-colors text-xs font-mono"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Agency Filter pills */}
-        <div className="flex flex-col gap-3 relative z-10">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold">Filter by Space Agency</span>
-          <div className="flex flex-wrap gap-2">
-            {agencies.map((agency) => {
-              const active = selectedAgency === agency;
-              return (
+            <div className="absolute inset-y-0 right-0 flex items-center gap-2 pr-3">
+              {aiSearchLoading && (
+                <svg className="w-3.5 h-3.5 text-indigo-400 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+              )}
+              {searchQuery && (
                 <button
-                  key={agency}
-                  onClick={() => setSelectedAgency(agency)}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition-all duration-300 cursor-pointer border
-                    ${active 
-                      ? "bg-indigo-500/20 border-indigo-400/50 text-indigo-200 shadow-[0_0_15px_rgba(99,102,241,0.25)]" 
-                      : "bg-white/[0.02] border-white/5 text-white/60 hover:text-white hover:border-white/15"
-                    }`}
+                  onClick={handleClearSearch}
+                  className="text-white/40 hover:text-white/80 transition-colors text-xs font-mono"
                 >
-                  {agency}
+                  Clear
                 </button>
-              );
-            })}
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Mini stats block */}
-        <div className="grid grid-cols-3 gap-4 pt-6 mt-2 border-t border-white/5 text-center relative z-10">
-          <div>
-            <div className="text-white/45 text-[9px] uppercase tracking-widest font-sans mb-1">Milestones</div>
-            <div className="text-white font-mono text-xl font-bold tracking-wide">{filteredMissions.length}</div>
-          </div>
-          <div>
-            <div className="text-white/45 text-[9px] uppercase tracking-widest font-sans mb-1">Agencies</div>
-            <div className="text-white font-mono text-xl font-bold tracking-wide">{uniqueAgencies}</div>
-          </div>
-          <div>
-            <div className="text-white/45 text-[9px] uppercase tracking-widest font-sans mb-1">Time Span</div>
-            <div className="text-white font-mono text-sm md:text-base font-bold tracking-wide mt-1.5 md:mt-0">{spanYears}</div>
-          </div>
-        </div>
+        {/* AI search hint */}
+        {searchQuery.trim() && (
+          <p className="text-[10px] text-indigo-400/50 font-mono tracking-widest -mt-2 relative z-10 flex items-center gap-1.5">
+            <Sparkles className="w-2.5 h-2.5" />
+            {aiSearchLoading
+              ? "Scanning cosmic archives…"
+              : showAiResult
+              ? `AI found: ${aiResult?.title}`
+              : isAiDuplicate
+              ? "Already shown above ↑"
+              : "AI will search all of space history"}
+          </p>
+        )}
+
+
       </div>
 
-      {/* ── Vertical spine line (real DOM, always at 50%) ── */}
+      {/* ── Vertical spine line ── */}
       {filteredMissions.length > 0 && (
-        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex justify-center pointer-events-none mt-72 mb-16">
+        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex justify-center pointer-events-none mt-48 mb-16">
           <div className="relative w-px h-full">
-            {/* Faint static line */}
             <div className="absolute inset-y-0 bg-gradient-to-b from-transparent via-[rgba(150,200,255,0.15)] to-transparent w-px" />
-            {/* Animated fill driven by scroll */}
             <motion.div
               className="absolute top-0 left-0 right-0 origin-top bg-gradient-to-b from-transparent via-[rgba(150,200,255,0.7)] to-transparent w-px"
               style={{ scaleY: pathLength }}
@@ -387,7 +477,7 @@ export default function ConstellationTimeline() {
         </div>
       )}
 
-      {/* ── Missions List ── */}
+      {/* ── Hardcoded Missions List ── */}
       <div className="flex flex-col gap-24 relative">
         <AnimatePresence mode="popLayout">
           {filteredMissions.map((mission) => (
@@ -395,26 +485,68 @@ export default function ConstellationTimeline() {
           ))}
         </AnimatePresence>
 
-        {filteredMissions.length === 0 && (
+        {/* Empty state — only if there's no AI section coming */}
+        {filteredMissions.length === 0 && !hasAiSection && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-20 border border-dashed border-white/10 rounded-2xl bg-white/[0.01]"
           >
             <Compass className="w-10 h-10 text-white/20 mx-auto mb-4 animate-pulse" />
-            <p className="text-white/60 font-sans tracking-wide text-sm font-medium">No space milestones found matching your criteria.</p>
+            <p className="text-white/60 font-sans tracking-wide text-sm font-medium">
+              No milestones matched. Try the AI search above.
+            </p>
             <button
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedAgency("All");
-              }}
+              onClick={handleClearSearch}
               className="mt-4 text-xs text-indigo-400 hover:text-indigo-300 font-mono tracking-widest uppercase cursor-pointer underline underline-offset-4"
             >
-              Reset Filters
+              Clear search
             </button>
           </motion.div>
         )}
       </div>
+
+      {/* ── AI Expanded Search Section ── */}
+      <AnimatePresence>
+        {hasAiSection && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.4 }}
+            className="mt-20"
+          >
+            {/* Separator */}
+            <div className="flex items-center gap-4 mb-10">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-indigo-500/25 to-transparent" />
+              <div className="flex items-center gap-2 text-[9px] tracking-[0.22em] uppercase text-indigo-400/55 font-mono shrink-0">
+                <Sparkles className="w-3 h-3" />
+                Cosmic AI Search
+                <Sparkles className="w-3 h-3" />
+              </div>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-indigo-500/25 to-transparent" />
+            </div>
+
+            {/* Loading state */}
+            {aiSearchLoading && (
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-indigo-400/60">
+                <svg className="w-6 h-6 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                <p className="text-xs font-mono tracking-[0.2em] uppercase">Scanning cosmic archives…</p>
+              </div>
+            )}
+
+            {/* AI Result Card */}
+            {!aiSearchLoading && showAiResult && aiResult && (
+              <AnimatePresence mode="popLayout">
+                <AiMissionCard key="ai-card" mission={aiResult} />
+              </AnimatePresence>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
