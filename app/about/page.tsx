@@ -37,18 +37,16 @@ const CREW = [
     id: "jhalak",
     name: "Jhalak Mittal",
     role: "Led the 3D Solar System & Planet Animations",
-    clearance: "Level 5 (Lead)",
     bio: "Passionate about bringing cosmic bodies to life with stunning visuals and realistic physics.",
     hobbies: "3D modeling, astrophotography, sci-fi novels",
     avatarColor: "from-indigo-500/20 to-purple-500/30 border-indigo-500/40",
     glowColor: "rgba(99, 102, 241, 0.4)",
-    tag: "ANIM-01"
+    tag: "VISUAL-01"
   },
   {
     id: "reshmi",
     name: "Reshmi Yadav",
     role: "Built the Space Timeline & UI/UX Design",
-    clearance: "Level 4",
     bio: "Designing intuitive journeys through time and space, blending aesthetic elegance with seamless interaction.",
     hobbies: "Sketching, user testing, stargazing",
     avatarColor: "from-pink-500/20 to-rose-500/30 border-pink-500/40",
@@ -59,7 +57,6 @@ const CREW = [
     id: "somya",
     name: "Somya Maheshwari",
     role: "Crafted the Landing Page & Visual Experience",
-    clearance: "Level 4",
     bio: "Creating immersive first impressions that draw visitors into the cosmos with vibrant visuals and storytelling.",
     hobbies: "Graphic design, motion graphics, astronomy podcasts",
     avatarColor: "from-emerald-500/20 to-teal-500/30 border-emerald-500/40",
@@ -70,18 +67,16 @@ const CREW = [
     id: "aryan",
     name: "Aryan Singhal",
     role: "Handled Integration, Deployment & Backend Architecture",
-    clearance: "Level 5",
     bio: "Ensuring robust, scalable infrastructure that powers the CosmosX experience across the web.",
     hobbies: "DevOps, cloud orchestration, quantum computing articles",
     avatarColor: "from-cyan-500/20 to-blue-500/30 border-cyan-500/40",
     glowColor: "rgba(6, 182, 212, 0.4)",
-    tag: "BACKEND-04"
+    tag: "ENG-04"
   },
   {
     id: "dushyant",
     name: "Dushyant Sharma",
     role: "Research, Content Strategy & Space Data Curation",
-    clearance: "Level 5 (Research Lead)",
     bio: "Curating accurate space data and crafting compelling narratives that educate and inspire.",
     hobbies: "Reading scientific journals, data visualization, hiking under the stars",
     avatarColor: "from-yellow-500/20 to-amber-500/30 border-yellow-500/40",
@@ -540,14 +535,10 @@ export default function AboutPage() {
 
                 {/* Dossier Stats & Bio */}
                 <div className="p-6 md:p-8 space-y-6">
-                  <div className="grid grid-cols-2 gap-4 bg-white/[0.02] border border-white/5 p-4 rounded-xl font-mono text-xs">
+                  <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl font-mono text-xs">
                     <div>
                       <span className="text-white/40 block mb-1">SYSTEM ASSIGNMENT:</span>
                       <span className="text-white font-medium">{selectedCrew.role}</span>
-                    </div>
-                    <div>
-                      <span className="text-white/40 block mb-1">SECURITY CLEARANCE:</span>
-                      <span className="text-indigo-400 font-bold">{selectedCrew.clearance}</span>
                     </div>
                   </div>
 
