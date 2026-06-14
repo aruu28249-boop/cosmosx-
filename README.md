@@ -13,7 +13,32 @@
 
 ## Preview
 
-![CosmosX Home](public/planet_map.png)
+```
+                                                                                
+  ██████╗ ██████╗ ███████╗███╗   ███╗ ██████╗ ███████╗██╗  ██╗
+ ██╔════╝██╔═══██╗██╔════╝████╗ ████║██╔═══██╗██╔════╝╚██╗██╔╝
+ ██║     ██║   ██║███████╗██╔████╔██║██║   ██║███████╗ ╚███╔╝ 
+ ██║     ██║   ██║╚════██║██║╚██╔╝██║██║   ██║╚════██║ ██╔██╗ 
+ ╚██████╗╚██████╔╝███████║██║ ╚═╝ ██║╚██████╔╝███████║██╔╝ ██╗
+  ╚═════╝ ╚═════╝ ╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+                                                                                
+        EXPLORE THE PAST  ·  VISUALIZE THE PRESENT  ·  SIMULATE THE FUTURE        
+```
+
+![CosmosX Home](assets/home.png)
+*Hero landing page — full-bleed Earth + galaxy backdrop with the COSMOSX wordmark*
+
+![CosmosX Simulator](assets/simulator.png)
+*Default simulator view — real-time 3D solar system with all 8 planets in accurate orbital positions*
+
+![AI Analysis Panel](assets/simulator-ai.png)
+*Asteroid Strikes scenario — Groq AI breakdown rendered live in the right panel alongside the 3D impact*
+
+![TIME floating text](assets/simulator-time.png)
+*10× Speed selected — animated floating description with the "LEARN MORE ›" deep-dive trigger*
+
+![Space News](assets/news.png)
+*Space News feed — latest articles from SpaceflightNewsAPI with year filter (2011–Latest)*
 
 ---
 
@@ -104,102 +129,24 @@ npm run dev
 
 ---
 
-## API Routes
+## Why CosmosX?
 
-All routes return JSON. Base URL in development: `http://localhost:3000`.
+Most space apps give you static images and Wikipedia paragraphs. CosmosX is the only platform that combines a real-time 3D universe, AI-powered "what if" simulation, live mission news, and real orbital mechanics — all in a single browser tab, for free.
 
-| Method | Endpoint | Description | Key Required |
-|---|---|---|---|
-| POST | `/api/scenario` | Analyze a cosmic "what if" with Groq AI | `GROQ_API_KEY` |
-| GET | `/api/news` | Fetch space news articles, filtered by year | None |
-| GET | `/api/quiz` | Generate today's space quiz with live planetary data | `GROQ_API_KEY` |
-| POST | `/api/speak` | Convert text to speech audio via Deepgram | `DEEPGRAM_API_KEY` |
+| Feature | CosmosX | NASA Eyes on the Solar System | SpaceEngine | Universe Sandbox | Star Walk 2 |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Runs in the browser | ✅ | ✅ | ❌ Desktop only | ❌ Desktop only | ❌ Mobile only |
+| Real-time 3D solar system | ✅ | ✅ | ✅ | ✅ | ✅ |
+| AI "what if" scenario engine | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Text-to-speech narration | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Live space news feed | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Historical mission timeline | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Real Keplerian orbital mechanics | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Role-finder quiz | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Free & open source | ✅ | ✅ | ❌ Paid | ❌ Paid | ❌ Paid |
+| No install required | ✅ | ✅ | ❌ | ❌ | ❌ |
 
-**Analyze a scenario:**
-
-```bash
-curl -X POST http://localhost:3000/api/scenario \
-  -H "Content-Type: application/json" \
-  -d '{"scenario": "What if Jupiter suddenly disappeared?"}'
-```
-
-```json
-{
-  "explanation": "Jupiter acts as a gravitational shield for the inner planets...",
-  "impacts": ["Asteroid belt destabilized", "Inner planet orbits shift"],
-  "timeline": "0–10 years: increased asteroid flux toward Earth...",
-  "survivability": "Low"
-}
-```
-
-**Fetch space news by year:**
-
-```bash
-curl "http://localhost:3000/api/news?year=2024"
-```
-
-**Generate text-to-speech:**
-
-```bash
-curl -X POST http://localhost:3000/api/speak \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Jupiter acts as a gravitational shield for the inner planets."}'
-# → returns audio/mpeg binary stream
-```
-
----
-
-## Project Structure
-
-```
-cosmosx/
-├── README.md
-│
-├── app/                              ← Next.js App Router
-│   ├── layout.tsx                    # Root layout — fonts, Vercel analytics
-│   ├── page.tsx                      # Home — hero video, 3D solar system
-│   ├── timeline/page.tsx             # Cosmic Timeline
-│   ├── missions/page.tsx             # Live Space News
-│   ├── about/page.tsx                # Crew dossiers, quiz, contact form
-│   ├── simulate/page.tsx             # Scenario Simulator shell
-│   ├── globals.css                   # Global styles + keyframe animations
-│   └── api/
-│       ├── scenario/route.js         # POST — Groq AI scenario analysis
-│       ├── news/route.js             # GET — SpaceflightNewsAPI proxy
-│       ├── quiz/route.js             # GET — daily quiz generation
-│       └── speak/route.js            # POST — Deepgram TTS
-│
-├── components/
-│   ├── Header.tsx                    # Navigation bar
-│   ├── GlobalCosmos.tsx              # Three.js 6,000-star background
-│   ├── AmbientCosmos.tsx             # Canvas-based particle fallback
-│   ├── HeroScene.tsx                 # 3D scene for the simulator panel
-│   ├── SimulatorClient.tsx           # Client wrapper — dynamic import guard
-│   ├── SolarSystem.tsx               # Animated orbital solar system
-│   ├── ScenarioSimulator.jsx         # Full simulator UI + AI result panel
-│   ├── ConstellationTimeline.tsx     # Timeline with expandable milestone cards
-│   ├── SpaceNews.tsx                 # News card grid with year filter
-│   └── MissionFlashcard.tsx          # Individual mission detail card
-│
-├── data/
-│   ├── planets.js                    # 8 planets — name, color, size, orbit, speed, facts
-│   ├── missions.js                   # Space milestone records (Sputnik → Mars 2050)
-│   ├── prompts.js                    # System prompts for Groq scenario analysis
-│   └── quizQuestions.js              # Pre-seeded quiz question bank
-│
-├── lib/
-│   └── orbital-mechanics.js          # Julian date + Keplerian angle calculations
-│
-├── public/
-│   ├── hero_bg.mp4                   # Hero section background video
-│   ├── milkyway.mp4                  # Secondary space background
-│   └── planet_map.png                # Planet texture map
-│
-├── .env.local                        # API keys — never commit
-├── next.config.ts                    # Next.js configuration
-├── tsconfig.json                     # TypeScript config with @ path alias
-└── package.json                      # Dependencies + scripts
-```
+The key gap CosmosX fills: **interactive AI reasoning about space**. No existing tool lets you ask "what if the asteroid belt disappeared?" and get a structured scientific analysis with a survivability rating in seconds. That's the core bet — curiosity-driven exploration, not just passive observation.
 
 ---
 
@@ -256,13 +203,35 @@ git push origin main
 
 ## Roadmap
 
-- [ ] Orrery mode — pause, scrub time, and watch orbital positions change
-- [ ] Webb telescope image gallery with NASA APOD integration
-- [ ] Exoplanet explorer — filter Kepler/TESS discoveries by habitability zone
+### Shipped
+
+- [x] Real-time 3D solar system with accurate Keplerian orbital mechanics
+- [x] AI "what if" scenario engine (Groq / LLaMA 3.1) with structured analysis
+- [x] Time controls — pause, 1×, 10×, 100× speed with per-mode deep-dive modals
+- [x] Time Machine — jump to any date and watch planets reposition in real time
+- [x] Planet surface explorer — click any planet to orbit it up close
+- [x] Live space news feed with year filter (2011 – Latest)
+- [x] Historical mission timeline (Sputnik 1957 → Mars colony 2050)
+- [x] Crew registry, dossiers, and role-finder quiz with live orbital data
+- [x] Text-to-speech narration for AI scenario analysis (Deepgram)
+- [x] Shooting stars, asteroid belt, rogue planet, and scenario visual effects
+
+### In Progress / Near-term
+
 - [ ] Shareable scenario cards — export AI analysis as a styled PNG
 - [ ] Voice input for scenario prompts (Web Speech API)
 - [ ] Mobile-optimised 3D with adaptive quality based on device GPU tier
-- [ ] Multiplayer crew mode — share a quiz session with friends
+- [ ] Webb telescope image gallery with NASA APOD integration
+
+### Future
+
+- [ ] **Timeline deep-dive** — expand each mission with crew bios, launch video, instrument breakdowns, and an interactive mission-path overlay on the solar system
+- [ ] **Gamified simulator** — score points for predicting scenario outcomes, unlock harder "what ifs", leaderboard across users
+- [ ] **Planet surface mode** — actual textured terrain to walk across: craters, canyons, atmosphere layers, day/night cycle per planet
+- [ ] **Beyond the solar system** — zoom out to the Milky Way, visit nearby star systems, explore nebulae and black holes
+- [ ] **Sandbox / God mode** — freeform universe editor: spawn aliens, ice comets, meteor showers, rogue stars, custom planets; run collisions, chain reactions, and watch the physics play out
+- [ ] Exoplanet explorer — filter Kepler/TESS discoveries by habitability zone
+- [ ] Multiplayer crew mode — share a quiz or sandbox session with friends in real time
 
 ---
 
