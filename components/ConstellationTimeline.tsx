@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { Search, Compass } from "lucide-react";
+import { Search, Compass, Sparkles } from "lucide-react";
 
 type Mission = {
   id: string;
@@ -158,9 +158,36 @@ function CardButton({
   align: "left" | "right";
 }) {
   const isLeft = align === "left";
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleToggle = async () => {
+    const willOpen = !open;
+    setOpen((v) => !v);
+    // Fetch AI explanation on first open
+    if (willOpen && !aiExplanation && !aiLoading) {
+      setAiLoading(true);
+      try {
+        const res = await fetch('/api/scenario', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scenario: `${mission.title} (${mission.date}): ${mission.desc} — ${mission.detail}`,
+          }),
+        });
+        const data = await res.json();
+        setAiExplanation(data?.explanation ?? null);
+      } catch {
+        setAiExplanation(null);
+      } finally {
+        setAiLoading(false);
+      }
+    }
+  };
+
   return (
     <button
-      onClick={() => setOpen((v) => !v)}
+      onClick={handleToggle}
       aria-expanded={open}
       className={`group w-full max-w-sm rounded-xl border px-5 py-4 transition-all duration-300 cursor-pointer
         ${isLeft ? "text-left" : "text-right"}
@@ -193,6 +220,28 @@ function CardButton({
             <p className="text-white/75 text-sm leading-relaxed mt-4 pt-4 border-t border-white/10">
               {mission.detail}
             </p>
+
+            {/* AI explanation section */}
+            <div className={`mt-4 pt-3 border-t border-indigo-400/10`}>
+              <div className={`flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase text-indigo-300/60 mb-2 ${isLeft ? "" : "justify-end"}`}>
+                <Sparkles className="w-2.5 h-2.5" />
+                AI Analysis
+              </div>
+              {aiLoading ? (
+                <div className={`flex items-center gap-2 text-indigo-300/50 text-xs ${isLeft ? "" : "justify-end"}`}>
+                  <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Consulting the cosmos…
+                </div>
+              ) : aiExplanation ? (
+                <p className={`text-indigo-100/70 text-xs leading-relaxed italic ${isLeft ? "" : "text-right"}`}>
+                  {aiExplanation}
+                </p>
+              ) : null}
+            </div>
+
             <div className={`flex flex-wrap gap-2 mt-4 ${isLeft ? "justify-start" : "justify-end"}`}>
               {mission.facts.map((fact) => (
                 <span
