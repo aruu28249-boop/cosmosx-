@@ -78,7 +78,10 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   const [result,      setResult]      = useState(null)
   const [error,       setError]       = useState(null)
   const [speaking,    setSpeaking]    = useState(false)
-  const audioRef = useRef(null)
+  const audioRef      = useRef(null)
+  // Generation counter — incremented on every new runScenario / reset call.
+  // Stale async completions compare their captured gen to this and bail early.
+  const generationRef = useRef(0)
 
   // ── Custom question ───────────────────────────────────────────────────────
   const [customQ,         setCustomQ]         = useState('')
@@ -109,12 +112,16 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   const stopSpeaking = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause()
+      audioRef.current.src = ''
       audioRef.current = null
     }
     setSpeaking(false)
   }, [])
 
-  const speak = useCallback(async (text) => {
+  // speak(text, gen) — starts streaming TTS audio.
+  // gen must equal generationRef.current when the TTS fetch resolves,
+  // otherwise the result is silently discarded (user already moved to a new card).
+  const speak = useCallback(async (text, gen) => {
     stopSpeaking()
     setSpeaking(true)
     try {
@@ -124,33 +131,70 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
         body: JSON.stringify({ text }),
       })
       if (!res.ok) throw new Error('TTS failed')
+
+      // Guard: if user switched cards while the TTS fetch was in flight, discard.
+      if (gen !== generationRef.current) { setSpeaking(false); return }
+
+      // Stream via MediaSource so playback starts with the first chunk
+      // (much lower latency than waiting for the full blob).
       const mediaSource = new MediaSource()
       const url = URL.createObjectURL(mediaSource)
       const audio = new Audio(url)
       audioRef.current = audio
-      audio.play()
-      mediaSource.addEventListener('sourceopen', async () => {
-        const sb = mediaSource.addSourceBuffer('audio/mpeg')
-        const reader = res.body.getReader()
-        const pump = async () => {
-          const { done, value } = await reader.read()
-          if (done) {
-            if (!sb.updating) mediaSource.endOfStream()
-            else sb.addEventListener('updateend', () => mediaSource.endOfStream(), { once: true })
-            return
-          }
-          sb.appendBuffer(value)
-          sb.addEventListener('updateend', pump, { once: true })
-        }
-        await pump()
-      })
+
       audio.onended = () => { setSpeaking(false); URL.revokeObjectURL(url) }
       audio.onerror = () => { setSpeaking(false); URL.revokeObjectURL(url) }
+
+      mediaSource.addEventListener('sourceopen', async () => {
+        // Bail if stopSpeaking() was called before sourceopen fired
+        if (audioRef.current !== audio) {
+          try { mediaSource.endOfStream() } catch {}
+          URL.revokeObjectURL(url)
+          return
+        }
+
+        const sb = mediaSource.addSourceBuffer('audio/mpeg')
+        const reader = res.body.getReader()
+        let playTriggered = false
+
+        const pump = async () => {
+          const { done, value } = await reader.read()
+
+          // Stop pumping if audio was replaced by a newer speak() call
+          if (audioRef.current !== audio) {
+            try { reader.cancel() } catch {}
+            return
+          }
+
+          if (done) {
+            if (!sb.updating) { try { mediaSource.endOfStream() } catch {} }
+            else sb.addEventListener('updateend', () => { try { mediaSource.endOfStream() } catch {} }, { once: true })
+            return
+          }
+
+          sb.appendBuffer(value)
+          sb.addEventListener('updateend', async () => {
+            // Trigger playback as soon as we have the first decoded chunk ready
+            if (!playTriggered && audio.readyState >= 2) {
+              playTriggered = true
+              const p = audio.play()
+              if (p) p.catch(() => { /* interrupted by stopSpeaking — safe to ignore */ })
+            }
+            await pump()
+          }, { once: true })
+        }
+        await pump()
+      }, { once: true })
+
     } catch { setSpeaking(false) }
   }, [stopSpeaking])
 
   // ── Core AI call ──────────────────────────────────────────────────────────
   const runScenario = useCallback(async ({ scenarioId, customQuestion, label, color }) => {
+    // Stamp this invocation. If a newer call arrives before this fetch resolves,
+    // the stale completion will see gen !== generationRef.current and bail out,
+    // preventing mismatched or ghost voices.
+    const gen = ++generationRef.current
     stopSpeaking()
     setResult(null)
     setError(null)
@@ -163,22 +207,26 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
         body: JSON.stringify(body),
       })
       const data = await res.json()
+      // Stale response — a newer scenario was clicked while this was loading
+      if (gen !== generationRef.current) return
       if (data.error) throw new Error(data.error)
       setResult({ ...data, label, color })
       onScenarioSelect?.(scenarioId ?? 'custom')
       if (data.explanation) {
         const parts = [data.explanation]
-        if (data.impact?.length)       parts.push(data.impact.join('. '))
-        if (data.timeline?.oneYear)    parts.push('In the first year: '     + data.timeline.oneYear)
-        if (data.timeline?.tenYears)   parts.push('Over ten years: '        + data.timeline.tenYears)
-        if (data.timeline?.hundredYears) parts.push('After a hundred years: ' + data.timeline.hundredYears)
+        if (data.impact?.length)         parts.push(data.impact.join('. '))
+        if (data.timeline?.oneYear)      parts.push('In the first year: '      + data.timeline.oneYear)
+        if (data.timeline?.tenYears)     parts.push('Over ten years: '         + data.timeline.tenYears)
+        if (data.timeline?.hundredYears) parts.push('After a hundred years: '  + data.timeline.hundredYears)
         if (data.howItCouldHappen?.length) parts.push('How this could happen: ' + data.howItCouldHappen.join('. '))
-        speak(parts.join('. '))
+        // Pass gen so speak() can discard itself if the user has already switched cards
+        speak(parts.join('. '), gen)
       }
     } catch (err) {
+      if (gen !== generationRef.current) return
       setError(err.message || 'Could not reach AI. Visual effect is still active.')
     } finally {
-      setLoading(false)
+      if (gen === generationRef.current) setLoading(false)
     }
   }, [onScenarioSelect, speak, stopSpeaking])
 
@@ -230,6 +278,7 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
   }
 
   const handleReset = () => {
+    generationRef.current++ // cancel any in-flight runScenario
     stopSpeaking()
     resetAll()
     setActiveId(null); setResult(null); setError(null); setLoading(false)
@@ -524,11 +573,15 @@ export default function ScenarioSimulator({ onScenarioSelect }) {
       {/* ── Right Panel: Quiz or AI Result ──────────────────────────────── */}
       {showRight && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — clicking outside the panel closes it and reverses any active effect */}
           <div
             onClick={() => {
               if (quizOpen) { setQuizOpen(false); return }
-              setResult(null); setError(null); setLoading(false); setActiveId(null); stopSpeaking()
+              generationRef.current++ // cancel any in-flight runScenario
+              stopSpeaking()
+              setResult(null); setError(null); setLoading(false); setActiveId(null)
+              // Also reset the 3D solar-system effect so visuals are fully reversed
+              resetAll()
             }}
             style={{ position: 'fixed', inset: 0, pointerEvents: 'auto', cursor: 'default' }}
           />
