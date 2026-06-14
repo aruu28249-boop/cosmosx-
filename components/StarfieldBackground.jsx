@@ -2,6 +2,19 @@ import React, { useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
+// Move Camera OUTSIDE - pass mouse as prop
+function Camera({ mouse }) {
+  const cam = useRef();
+  useFrame(() => {
+    if (cam.current) {
+      cam.current.position.x += (mouse.current[0] * 30 - cam.current.position.x) * 0.05;
+      cam.current.position.y += (-mouse.current[1] * 30 - cam.current.position.y) * 0.05;
+      cam.current.lookAt(0, 0, 0);
+    }
+  });
+  return null;
+}
+
 function Stars() {
   const points = useRef();
   const starGeo = new THREE.BufferGeometry();
@@ -43,22 +56,10 @@ function StarfieldBackground() {
     return () => window.removeEventListener('mousemove', handle);
   }, []);
 
-  const Camera = () => {
-    const cam = useRef();
-    useFrame(() => {
-      if (cam.current) {
-        cam.current.position.x += (mouse.current[0] * 30 - cam.current.position.x) * 0.05;
-        cam.current.position.y += (-mouse.current[1] * 30 - cam.current.position.y) * 0.05;
-        cam.current.lookAt(0, 0, 0);
-      }
-    });
-    return null;
-  };
-
   return (
     <div className="absolute inset-0 pointer-events-none" ref={canvasRef}>
       <Canvas>
-        <Camera />
+        <Camera mouse={mouse} />
         <Stars />
       </Canvas>
     </div>
