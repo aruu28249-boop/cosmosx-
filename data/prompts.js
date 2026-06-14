@@ -88,4 +88,68 @@ Respond in this exact JSON format:
 }
 
 Be scientific but readable. Focus on solar radiation, Earth's temperature, ocean evaporation, and habitability.`,
+
+  'rogue-planet': `You are a space scientist. Answer this scenario: "What if a rogue planet entered our solar system?"
+
+Respond in this exact JSON format:
+{
+  "explanation": "2-3 sentence scientific explanation of the immediate effects",
+  "impact": ["bullet point 1", "bullet point 2", "bullet point 3", "bullet point 4"],
+  "timeline": {
+    "oneYear": "What happens in the first year",
+    "tenYears": "What changes over 10 years",
+    "hundredYears": "What the solar system looks like after 100 years"
+  },
+  "howItCouldHappen": ["Rogue planets — ejected from their home systems during formation — are estimated to outnumber stars in the galaxy; one could be on a trajectory toward our solar system", "A close stellar encounter billions of years ago could have scattered a distant planet onto a hyperbolic path that only now intersects our system", "Gravitational lensing surveys suggest rogue planets are common, and statistical probability over 5 billion years makes a close encounter plausible"]
+}
+
+Be scientific but readable. Focus on gravitational disruption, orbital chaos, potential collisions, and long-term solar system destabilisation.`,
+
+  'sun-dies': `You are a space scientist. Answer this scenario: "What if the Sun started dying and expanding into a red giant?"
+
+Respond in this exact JSON format:
+{
+  "explanation": "2-3 sentence scientific explanation of the immediate effects",
+  "impact": ["bullet point 1", "bullet point 2", "bullet point 3", "bullet point 4"],
+  "timeline": {
+    "oneYear": "What happens in the first year",
+    "tenYears": "What changes over 10 years",
+    "hundredYears": "What Earth and the solar system look like after 100 years"
+  },
+  "howItCouldHappen": ["In approximately 5 billion years the Sun will naturally exhaust its hydrogen fuel, causing core contraction and outer layer expansion into a red giant that engulfs Mercury and Venus", "A sudden decrease in core fusion efficiency — perhaps from exotic particle interactions — could accelerate the transition to a subgiant phase over centuries instead of billions of years", "Theoretical: a macroscopic quantum tunneling event in the stellar core could trigger premature helium flash, rapidly changing the Sun's energy output and radius"]
+}
+
+Be scientific but readable. Focus on solar luminosity changes, orbital shifts, habitability loss, and the fate of Earth.`,
+
+  'earth-stops': `You are a space scientist. Answer this scenario: "What if Earth suddenly stopped rotating?"
+
+Respond in this exact JSON format:
+{
+  "explanation": "2-3 sentence scientific explanation of the immediate effects",
+  "impact": ["bullet point 1", "bullet point 2", "bullet point 3", "bullet point 4"],
+  "timeline": {
+    "oneYear": "What happens in the first year",
+    "tenYears": "What changes over 10 years",
+    "hundredYears": "What Earth looks like after 100 years"
+  },
+  "howItCouldHappen": ["A near-miss with a rogue planet or large brown dwarf could tidally lock Earth through extreme angular momentum transfer", "Theoretical: a sufficiently powerful directed-energy weapon or mass driver operating over decades could gradually brake Earth's rotation", "In the far future, tidal friction from the Moon is already slowly decelerating Earth's rotation — if this process accelerated dramatically it could halt rotation within millennia"]
+}
+
+Be scientific but readable. Focus on 6-month days and nights, atmospheric redistribution, magnetic field collapse, and the effect on life.`,
+
+  'solar-flare': `You are a space scientist. Answer this scenario: "What if a massive solar flare hit Earth directly?"
+
+Respond in this exact JSON format:
+{
+  "explanation": "2-3 sentence scientific explanation of the immediate effects",
+  "impact": ["bullet point 1", "bullet point 2", "bullet point 3", "bullet point 4"],
+  "timeline": {
+    "oneYear": "What happens in the first year",
+    "tenYears": "What changes over 10 years",
+    "hundredYears": "What Earth looks like after 100 years"
+  },
+  "howItCouldHappen": ["The 1859 Carrington Event demonstrated that X-class solar flares can send coronal mass ejections strong enough to destroy telegraph infrastructure; a repeat today would be catastrophic", "During solar maximum, active sunspot regions can produce X20+ flares; a direct Earth-strike from such an event occurs roughly every few centuries", "Theoretical: a solar energetic particle storm combined with a Carrington-class CME could compress Earth's magnetosphere to within geosynchronous orbit, exposing the surface to direct particle radiation"]
+}
+
+Be scientific but readable. Focus on EMP effects, power grid destruction, satellite loss, radiation exposure, and long-term civilisation impact.`,
 }

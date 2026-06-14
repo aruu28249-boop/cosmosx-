@@ -616,6 +616,15 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     if (activeEffect === 'jupiter-disappear' && data.name !== 'Jupiter') {
       scenarioMult = 1 + Math.sin(t * 0.6 + data.orbitRadius) * 0.25
     }
+    if (activeEffect === 'rogue-planet') {
+      scenarioMult = 1 + Math.sin(t * 0.7 + data.orbitRadius * 0.4) * 0.4
+    }
+    if (activeEffect === 'sun-dies') {
+      scenarioMult = 0.25
+    }
+    if (activeEffect === 'solar-flare' && data.orbitRadius < 30) {
+      scenarioMult = 1.15
+    }
 
     angleRef.current += data.orbitSpeed * dt * timeMultiplier * scenarioMult * 0.3
 
@@ -640,11 +649,26 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
       // Increased radiation pressure subtly perturbs smaller planets
       y = Math.sin(t * 0.5 + data.orbitRadius * 0.3) * (data.size < 2 ? 0.5 : 0.15)
     }
+    if (activeEffect === 'rogue-planet') {
+      // Massive interloper gravity distorts all orbits
+      orbitR *= 1 + Math.sin(t * 1.1 + data.orbitRadius * 0.5) * 0.12
+      y = Math.sin(t * 0.8 + data.orbitRadius * 0.9) * 3.5
+    }
+    if (activeEffect === 'sun-dies') {
+      // Orbits expand slowly as Sun loses mass
+      orbitR *= 1 + Math.min(t * 0.008, 0.18)
+      y = Math.sin(t * 0.2 + data.orbitRadius * 0.3) * 0.3
+    }
+    if (activeEffect === 'solar-flare' && data.orbitRadius < 35) {
+      // Inner planets buffeted by intense radiation and CME
+      y = Math.sin(t * 2.5 + data.orbitRadius) * 1.2
+    }
 
     const x = Math.cos(angleRef.current) * orbitR
     const z = Math.sin(angleRef.current) * orbitR
     meshRef.current.position.set(x, y, z)
-    meshRef.current.rotation.y += data.rotationSpeed * dt * timeMultiplier * scenarioMult
+    const isEarthStopped = activeEffect === 'earth-stops' && data.name === 'Earth'
+    meshRef.current.rotation.y += (isEarthStopped ? 0 : data.rotationSpeed) * dt * timeMultiplier * scenarioMult
 
     if (atmoRef.current) atmoRef.current.position.set(x, y, z)
     if (ringRef.current) ringRef.current.position.set(x, y, z)
