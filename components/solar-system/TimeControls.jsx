@@ -265,7 +265,7 @@ export default function TimeControls({ multiplier, setMultiplier }) {
               cursor: 'default',
             }}
           />
-          <div style={{ position: 'relative', zIndex: 25 }}>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 25, pointerEvents: 'none' }}>
             <FloatingWords
               text={activeCtrl.text}
               onLearnMore={() => { setModalCtrl(activeCtrl); setActiveCtrl(null) }}
