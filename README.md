@@ -13,6 +13,18 @@
 
 ## Preview
 
+```
+                                                                                
+  ██████╗ ██████╗ ███████╗███╗   ███╗ ██████╗ ███████╗██╗  ██╗
+ ██╔════╝██╔═══██╗██╔════╝████╗ ████║██╔═══██╗██╔════╝╚██╗██╔╝
+ ██║     ██║   ██║███████╗██╔████╔██║██║   ██║███████╗ ╚███╔╝ 
+ ██║     ██║   ██║╚════██║██║╚██╔╝██║██║   ██║╚════██║ ██╔██╗ 
+ ╚██████╗╚██████╔╝███████║██║ ╚═╝ ██║╚██████╔╝███████║██╔╝ ██╗
+  ╚═════╝ ╚═════╝ ╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+                                                                                
+        EXPLORE THE PAST  ·  VISUALIZE THE PRESENT  ·  SIMULATE THE FUTURE        
+```
+
 ![CosmosX Home](assets/home.png)
 *Hero landing page — full-bleed Earth + galaxy backdrop with the COSMOSX wordmark*
 
@@ -191,13 +203,35 @@ git push origin main
 
 ## Roadmap
 
-- [ ] Orrery mode — pause, scrub time, and watch orbital positions change
-- [ ] Webb telescope image gallery with NASA APOD integration
-- [ ] Exoplanet explorer — filter Kepler/TESS discoveries by habitability zone
+### Shipped
+
+- [x] Real-time 3D solar system with accurate Keplerian orbital mechanics
+- [x] AI "what if" scenario engine (Groq / LLaMA 3.1) with structured analysis
+- [x] Time controls — pause, 1×, 10×, 100× speed with per-mode deep-dive modals
+- [x] Time Machine — jump to any date and watch planets reposition in real time
+- [x] Planet surface explorer — click any planet to orbit it up close
+- [x] Live space news feed with year filter (2011 – Latest)
+- [x] Historical mission timeline (Sputnik 1957 → Mars colony 2050)
+- [x] Crew registry, dossiers, and role-finder quiz with live orbital data
+- [x] Text-to-speech narration for AI scenario analysis (Deepgram)
+- [x] Shooting stars, asteroid belt, rogue planet, and scenario visual effects
+
+### In Progress / Near-term
+
 - [ ] Shareable scenario cards — export AI analysis as a styled PNG
 - [ ] Voice input for scenario prompts (Web Speech API)
 - [ ] Mobile-optimised 3D with adaptive quality based on device GPU tier
-- [ ] Multiplayer crew mode — share a quiz session with friends
+- [ ] Webb telescope image gallery with NASA APOD integration
+
+### Future
+
+- [ ] **Timeline deep-dive** — expand each mission with crew bios, launch video, instrument breakdowns, and an interactive mission-path overlay on the solar system
+- [ ] **Gamified simulator** — score points for predicting scenario outcomes, unlock harder "what ifs", leaderboard across users
+- [ ] **Planet surface mode** — actual textured terrain to walk across: craters, canyons, atmosphere layers, day/night cycle per planet
+- [ ] **Beyond the solar system** — zoom out to the Milky Way, visit nearby star systems, explore nebulae and black holes
+- [ ] **Sandbox / God mode** — freeform universe editor: spawn aliens, ice comets, meteor showers, rogue stars, custom planets; run collisions, chain reactions, and watch the physics play out
+- [ ] Exoplanet explorer — filter Kepler/TESS discoveries by habitability zone
+- [ ] Multiplayer crew mode — share a quiz or sandbox session with friends in real time
 
 ---
 
