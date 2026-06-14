@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import GlobalCosmos from "@/components/GlobalCosmos";
-// Import client-side comet cursor
-import CometCursorClient from "@/components/CometCursorClient";
 import { Analytics } from "@vercel/analytics/next";
 
 const cormorant = Cormorant_Garamond({
@@ -34,7 +32,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#050816] text-white font-sans overflow-x-hidden">
         <GlobalCosmos />
-        <CometCursorClient />
         {children}
       </body>
     </html>
