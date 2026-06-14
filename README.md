@@ -1,18 +1,3 @@
-# CosmosX
-
-> **Explore the Past. Visualize the Present. Simulate the Future — an immersive 3D space exploration platform powered by real orbital mechanics, AI scenario analysis, and live space news.**
-
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![Three.js](https://img.shields.io/badge/Three.js-WebGL%203D-000000?style=flat-square&logo=threedotjs&logoColor=white)](https://threejs.org)
-[![Groq](https://img.shields.io/badge/Groq-LLaMA%203.1-F55036?style=flat-square)](https://groq.com)
-[![Tailwind](https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square&logo=opensourceinitiative&logoColor=white)](LICENSE)
-
----
-
-## Preview
-
 ```
                                                                                 
   ██████╗ ██████╗ ███████╗███╗   ███╗ ██████╗ ███████╗██╗  ██╗
@@ -24,6 +9,19 @@
                                                                                 
         EXPLORE THE PAST  ·  VISUALIZE THE PRESENT  ·  SIMULATE THE FUTURE        
 ```
+
+> **An immersive 3D space exploration platform powered by real orbital mechanics, AI scenario analysis, and live space news.**
+
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![Three.js](https://img.shields.io/badge/Three.js-WebGL%203D-000000?style=flat-square&logo=threedotjs&logoColor=white)](https://threejs.org)
+[![Groq](https://img.shields.io/badge/Groq-LLaMA%203.1-F55036?style=flat-square)](https://groq.com)
+[![Tailwind](https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square&logo=opensourceinitiative&logoColor=white)](LICENSE)
+
+---
+
+## Preview
 
 ![CosmosX Home](assets/home.png)
 *Hero landing page — full-bleed Earth + galaxy backdrop with the COSMOSX wordmark*
