@@ -18,6 +18,9 @@ The user searched for: "${query.trim()}"
 Identify the single most iconic or relevant real space mission, event, or milestone that matches this search query.
 If the query is vague (e.g., "moon", "mars"), pick the single most historically significant match.
 
+CRITICAL: If the query is gibberish (like "egere" or "asdf"), entirely unrelated to space, or if no real space mission exists that matches, you MUST return exactly this JSON:
+{ "error": "NOT_FOUND" }
+
 Return ONLY valid JSON — no markdown, no explanation, no code fences. Exactly this structure:
 {
   "title": "Full official mission or event name",
@@ -59,6 +62,10 @@ Return ONLY valid JSON — no markdown, no explanation, no code fences. Exactly 
     }
 
     const parsed = JSON.parse(match[0])
+
+    if (parsed.error === 'NOT_FOUND') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
 
     // Validate required fields
     if (!parsed.title || !parsed.date) {
