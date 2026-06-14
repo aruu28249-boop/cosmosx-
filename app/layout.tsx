@@ -3,7 +3,7 @@ import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import GlobalCosmos from "@/components/GlobalCosmos";
 import { Analytics } from "@vercel/analytics/next";
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 const cormorant = Cormorant_Garamond({
   variable: "--font-syne",
   subsets: ["latin"],
