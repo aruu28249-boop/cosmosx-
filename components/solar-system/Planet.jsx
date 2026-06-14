@@ -465,6 +465,10 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
   const moon2AngleRef  = useRef(Math.PI)
   const realAngleRef   = useRef(0)
   const opacityRef     = useRef(1)
+  // Track when the current effect started so time-dependent perturbations
+  // always begin from t=0 (prevents orbit jumps on effect activation)
+  const effectStartRef = useRef(0)
+  const prevEffectRef  = useRef(null)
   const visual = PLANET_VISUALS[data.name]
 
   // Saturn ring material
@@ -590,6 +594,14 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     const dt = Math.min(delta, 0.033)
     const t  = clock.elapsedTime
 
+    // Record clock time whenever the active effect changes so all
+    // time-dependent perturbations start from effectAge = 0
+    if (activeEffect !== prevEffectRef.current) {
+      effectStartRef.current = t
+      prevEffectRef.current  = activeEffect
+    }
+    const effectAge = t - effectStartRef.current
+
     if (!initializedRef.current && data.orbitRadius > 0) {
       angleRef.current = initialAngle ?? (Math.random() * Math.PI * 2)
       realAngleRef.current = angleRef.current
@@ -598,11 +610,12 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     }
 
     if (initializedRef.current) {
+      const isEarthOrbitStopped = activeEffect === 'earth-stops' && data.name === 'Earth'
       const advance = data.orbitSpeed * dt * timeMultiplier * 0.3
-      // The background 'live' time always ticks forward
-      backgroundAngleRef.current += advance
-      // The actual simulation time also ticks forward, even if we are in the past/future
-      realAngleRef.current += advance
+      // The background 'live' time always ticks forward (unless Earth orbit is frozen)
+      if (!isEarthOrbitStopped) backgroundAngleRef.current += advance
+      // The actual simulation time also ticks forward, except when Earth is stopped
+      if (!isEarthOrbitStopped) realAngleRef.current += advance
       
       // Visually spin towards the active simulation time (creates the rapid scrub effect)
       angleRef.current = THREE.MathUtils.lerp(angleRef.current, realAngleRef.current, lerpSpeedRef.current)
@@ -624,6 +637,10 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
     }
     if (activeEffect === 'solar-flare' && data.orbitRadius < 30) {
       scenarioMult = 1.15
+    }
+    // Earth stops — freeze orbital movement entirely (rotation is handled separately below)
+    if (activeEffect === 'earth-stops' && data.name === 'Earth') {
+      scenarioMult = 0
     }
 
     angleRef.current += data.orbitSpeed * dt * timeMultiplier * scenarioMult * 0.3
@@ -655,9 +672,10 @@ export default function Planet({ data, timeMultiplier = 1, onPlanetClick, active
       y = Math.sin(t * 0.8 + data.orbitRadius * 0.9) * 3.5
     }
     if (activeEffect === 'sun-dies') {
-      // Orbits expand slowly as Sun loses mass
-      orbitR *= 1 + Math.min(t * 0.008, 0.18)
-      y = Math.sin(t * 0.2 + data.orbitRadius * 0.3) * 0.3
+      // Orbits expand slowly as Sun loses mass — use effectAge so expansion
+      // always starts from 0 when the scenario is first activated
+      orbitR *= 1 + Math.min(effectAge * 0.008, 0.18)
+      y = Math.sin(effectAge * 0.2 + data.orbitRadius * 0.3) * 0.3
     }
     if (activeEffect === 'solar-flare' && data.orbitRadius < 35) {
       // Inner planets buffeted by intense radiation and CME
